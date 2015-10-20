@@ -1,4 +1,4 @@
-# Payline [![NPM version][npm-image]][npm-url]
+# Payline
 > NodeJS SDK for payline.com API
 
 This provides a very succinct SDK for the payline.com API. If you need additional Payline methods covered, feel free to contribute :-)
