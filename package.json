@@ -7,6 +7,11 @@
     "lint": "eslint src",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "homepage": "https://github.com/cubyn/payline",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/cubyn/payline.git"
+  },
   "author": "Cubyn",
   "license": "MIT",
   "dependencies": {
