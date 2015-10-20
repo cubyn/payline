@@ -1,13 +1,16 @@
 import soap from 'soap';
 import Promise from 'bluebird';
 import debugLib from 'debug';
+import path from 'path';
 const debug = debugLib('payline');
 
+const DEFAULT_WSDL = path.join(__dirname, 'DirectPaymentAPI.wsdl');
 const MIN_AMOUNT = 100;
 const ACTIONS = {
     VALIDATION_ONLY: 100,
     PAYMENT: 101 // validation + payment
 };
+
 // soap library has trouble loading element types
 // so we sometimes have to override inferred namespace
 function ns(type) {
@@ -27,7 +30,7 @@ const CURRENCIES = {
 
 export default class Payline {
 
-    constructor(user, pass, contractNumber, wsdl = 'DirectPaymentAPI.wsdl') {
+    constructor(user, pass, contractNumber, wsdl = DEFAULT_WSDL) {
         if (!user || !pass || !contractNumber) {
             throw new Error('All of user / pass / contractNumber should be defined');
         }

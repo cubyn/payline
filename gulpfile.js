@@ -8,8 +8,14 @@ gulp.task('babel', function() {
         .pipe(gulp.dest('dist/'));
 });
 
+gulp.task('wsdl', function() {
+    return gulp.src('src/*.wsdl')
+        .pipe(gulp.dest('dist/'));
+});
+
 gulp.task('watch', function() {
     gulp.watch('src/*.js', ['babel']);
+    gulp.watch('src/*.wsdl', ['wsdl']);
 });
 
 gulp.task('test', ['babel'], function() {
@@ -24,3 +30,4 @@ gulp.task('test', ['babel'], function() {
 
 // Default Task
 gulp.task('default', ['babel', 'test']);
+gulp.task('dist', ['babel', 'wsdl']);
