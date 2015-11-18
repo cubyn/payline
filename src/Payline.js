@@ -230,7 +230,7 @@ export default class Payline {
                 currency: currency,
                 action: ACTIONS.VALIDATION,
                 mode: 'CPT',
-                contractNumber: _this3.contractNumber
+                contractNumber: this.contractNumber
             },
             transactionID: transactionID
         };
@@ -268,11 +268,11 @@ function isSuccessful(result) {
 
 function formatNow() {
     var now = new Date();
-    var year = now.getFullYear();
-    var month = now.getMonth() + 1;
-    var day = now.getDate();
-    var hour = now.getHours();
-    var minute = now.getMinutes();
+    var year = now.getFullYear().toString();
+    var month = (now.getMonth() + 1).toString(); // getMonth() is zero-based
+    var day = now.getDate().toString();
+    var hour = now.getHours().toString();
+    var minute = now.getMinutes().toString();
     // DD/MM/YYYY HH:mm
     return (day[1] ? day : "0" + day[0]) + "/" + (month[1] ? month : "0" + month[0]) + "/" + year +
         " " + (hour[1] ? hour : "0" + hour[0]) + ":" + (minute[1] ? minute : "0" + minute[0]);
