@@ -43,6 +43,17 @@ payline.createWallet('wallet_0001', {
     });
 ```
 
+## Example using doWebPayment
+
+``` javascript
+payline.doWebPayment(123, 'A-PAY-TEST', '20/06/2015 20:21', 'http://www.wexample.com', 'http://v2.wexample.com')
+  .then(function (result) {
+    console.log("Youpla! Redirect to: " + result.redirectURL);
+  }, function (err) {
+    console.log("Wtf happened: " + err.shortMessage + ' - ' + err.longMessage);
+  });
+```
+
 ## API
 
 ##### `new Payline(userId, userPass, contractNumber) -> instance`
