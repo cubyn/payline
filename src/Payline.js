@@ -4,11 +4,12 @@ import debugLib from 'debug';
 import path from 'path';
 const debug = debugLib('payline');
 
-const DEFAULT_WSDL = path.join(__dirname, 'DirectPaymentAPI.wsdl');
+const DEFAULT_WSDL = path.join(__dirname, 'WebPaymentAPI.v4.44.wsdl');
 const MIN_AMOUNT = 100;
 const ACTIONS = {
-    VALIDATION_ONLY: 100,
-    PAYMENT: 101 // validation + payment
+    AUTHORIZATION: 100,
+    PAYMENT: 101, // validation + payment
+    VALIDATION: 201
 };
 
 // soap library has trouble loading element types
@@ -150,7 +151,7 @@ export default class Payline {
                         attributes: ns('payment'),
                         amount: tryAmount,
                         currency: currency,
-                        action: ACTIONS.VALIDATION_ONLY,
+                        action: ACTIONS.AUTHORIZATION,
                         mode: 'CPT',
                         contractNumber: this.contractNumber
                     },
@@ -182,15 +183,116 @@ export default class Payline {
                 }
             }, parseErrors);
     }
+
+    doAuthorization(reference, card, tryAmount, currency = CURRENCIES.EUR) {
+        const body = {
+            payment: {
+                attributes: ns('payment'),
+                amount: tryAmount,
+                currency: currency,
+                action: ACTIONS.AUTHORIZATION,
+                mode: 'CPT',
+                contractNumber: this.contractNumber
+            },
+            order: {
+                attributes: ns('order'),
+                ref: reference,
+                amount: tryAmount,
+                currency: currency,
+                date: formatNow()
+            },
+            card: {
+                attributes: ns('card'),
+                number: card.number,
+                type: card.type,
+                expirationDate: card.expirationDate,
+                cvx: card.cvx
+            }
+        };
+        return this.initialize()
+                .then(client => Promise.fromNode(callback => {
+                client.doAuthorization(body, callback);
+            }))
+            .spread(({ result, transaction = null }) => {
+                if (isSuccessful(result)) {
+                    return { transactionId: transaction.id };
+                } else {
+                    throw result;
+                }
+            }, parseErrors);
+    }
+
+    doCapture(transactionID, tryAmount, currency = CURRENCIES.EUR) {
+        const body = {
+            payment: {
+                attributes: ns('payment'),
+                amount: tryAmount,
+                currency: currency,
+                action: ACTIONS.VALIDATION,
+                mode: 'CPT',
+                contractNumber: this.contractNumber
+            },
+            transactionID: transactionID
+        };
+        return this.initialize()
+            .then(client => Promise.fromNode(callback => {
+                client.doCapture(body, callback);
+            }))
+            .spread(({ result, transaction = null }) => {
+                if (isSuccessful(result)) {
+                    return { transactionId: transaction.id };
+                } else {
+                    throw result;
+                }
+            }, parseErrors);
+    }
+
+    doWebPayment(amount, ref, date, returnURL, cancelURL, currency = CURRENCIES.EUR) {
+
+        var body = {
+            payment: {
+                attributes: ns('payment'),
+                amount: amount,
+                currency: currency,
+                action: ACTIONS.PAYMENT,
+                mode: 'CPT',
+                contractNumber: this.contractNumber
+            },
+            returnURL: returnURL,
+            cancelURL: cancelURL,
+            order: {
+                attributes: ns('order'),
+                ref: ref,
+                amount: amount,
+                currency: currency,
+                // Format : 20/06/2015 20:21
+                date: date
+            },
+            selectedContractList: null,
+            buyer: {}
+        };
+
+        return this.initialize()
+            .then(client => Promise.fromNode(callback => {
+                client.doWebPayment(body, callback);
+            }))
+            .spread(response => {
+                if (isSuccessful(response.result)) {
+                    return response;
+                } else {
+                    throw result;
+                }
+            }, parseErrors);
+    }
 }
 Payline.CURRENCIES = CURRENCIES;
 
 function parseErrors(error) {
     const response = error.response;
     if (response.statusCode === 401) {
-        return Promise.reject({ shortMessage: 'Wrong API credentials' });
+        return Promise.reject({shortMessage: 'Wrong API credentials'});
     } else {
-        return Promise.reject({ shortMessage: 'Wrong API call' });
+        return Promise.reject({shortMessage: 'Wrong API call'});
     }
 }
 
@@ -204,11 +306,12 @@ function isSuccessful(result) {
 
 function formatNow() {
     var now = new Date();
-    var year = now.getFullYear();
-    var month = now.getMonth() + 1;
-    var day = now.getDate();
-    var hour = now.getHours();
-    var minute = now.getMinutes();
+    var year = now.getFullYear().toString();
+    var month = (now.getMonth() + 1).toString(); // getMonth() is zero-based
+    var day = now.getDate().toString();
+    var hour = now.getHours().toString();
+    var minute = now.getMinutes().toString();
     // DD/MM/YYYY HH:mm
-    return now.format(`${day}/${month}/${year} ${hour}:${minute}`);
+    return (day[1] ? day : "0" + day[0]) + "/" + (month[1] ? month : "0" + month[0]) + "/" + year +
+        " " + (hour[1] ? hour : "0" + hour[0]) + ":" + (minute[1] ? minute : "0" + minute[0]);
 }
