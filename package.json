@@ -1,5 +1,5 @@
 {
-  "name": "payline-weeger",
+  "name": "payline",
   "version": "0.0.3",
   "description": "NodeJS SDK for payline.com API",
   "main": "index.js",
@@ -8,10 +8,10 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "prepublish": "gulp dist"
   },
-  "homepage": "https://github.com/weeger/payline",
+  "homepage": "https://github.com/cubyn/payline",
   "repository": {
     "type": "git",
-    "url": "git://github.com/weeger/payline.git"
+    "url": "git://github.com/cubyn/payline.git"
   },
   "author": "Cubyn",
   "license": "MIT",
