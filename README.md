@@ -1,5 +1,5 @@
 # Payline
-> NodeJS SDK for payline.com API
+> Fork of cubyn/payline
 
 This provides a very succinct SDK for the payline.com API. If you need additional Payline methods covered, feel free to contribute :-)
 Highly inspired from [Django-Payline](https://github.com/magopian/django-payline), thanks!
@@ -74,6 +74,9 @@ payline.doWebPayment(123, 'A-PAY-TEST', '20/06/2015 20:21', 'http://www.wexample
 
 ##### `instance.validateCard(card, tryAmount = 100, currency = 978) -> Promise(bool)`
 > Will try to issue a 1€ order (that will be cancelled right after the call is verified)
+
+##### `instance.getWebPaymentDetails(token) -> Promise(object)`
+> Will try to know is the payment have been okay
 
 ## Contributions
 

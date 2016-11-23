@@ -14,6 +14,9 @@
     "url": "git://github.com/cubyn/payline.git"
   },
   "author": "Cubyn",
+  "contrinutors": [
+    "Flavien-Pensato <flavien.pensato@gmail.com>"
+  ],
   "license": "MIT",
   "dependencies": {
     "bluebird": "2.10.x",
