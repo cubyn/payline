@@ -1,22 +1,19 @@
 {
   "name": "payline",
   "version": "0.0.3",
-  "description": "NodeJS SDK for payline.com API",
+  "description": "Fork of cubyn/payline",
   "main": "index.js",
   "scripts": {
     "lint": "eslint src",
     "test": "echo \"Error: no test specified\" && exit 1",
     "prepublish": "gulp dist"
   },
-  "homepage": "https://github.com/cubyn/payline",
+  "homepage": "https://github.com/Flavien-Pensato/payline",
   "repository": {
     "type": "git",
-    "url": "git://github.com/cubyn/payline.git"
+    "url": "git@github.com:Flavien-Pensato/payline.git"
   },
-  "author": "Cubyn",
-  "contrinutors": [
-    "Flavien-Pensato <flavien.pensato@gmail.com>"
-  ],
+  "author": "Flavien-Pensato",
   "license": "MIT",
   "dependencies": {
     "bluebird": "2.10.x",
