@@ -1,6 +1,8 @@
 # Payline
 > Fork of cubyn/payline
 
+___This fork include new method available.___
+
 This provides a very succinct SDK for the payline.com API. If you need additional Payline methods covered, feel free to contribute :-)
 Highly inspired from [Django-Payline](https://github.com/magopian/django-payline), thanks!
 
@@ -15,11 +17,11 @@ Where to find those f**** config strings? Well I've been there:
 - `contractNumber` is related to a point of sale and a method of payment. So once you created a _point of sale_, head to _method of payment_ and you will get a contract number after that. In the test mode, '1234567' seems to be accepted by default
 
 ```
-npm install payline
+npm install flav-payline
 ```
 
 ``` javascript
-var Payline = require('payline');
+var Payline = require('flav-payline');
 var payline = new Payline('<% userId %>', '<% userPass %>', '<% contractNumber %>');
 ```
 
