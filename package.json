@@ -1,6 +1,6 @@
 {
   "name": "flav-payline",
-  "version": "0.0.6",
+  "version": "0.1.1",
   "description": "Fork of cubyn/payline",
   "main": "index.js",
   "scripts": {

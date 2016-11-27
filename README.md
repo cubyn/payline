@@ -48,11 +48,12 @@ payline.runAction('doWebPayment', {
      selectedContractList: null,
      buyer: {}
    })
-  .then(function (result) {
-    console.log("Youpla! Redirect to: " + result.redirectURL);
-  }, function (err) {
-    console.log("Wtf happened: " + err.shortMessage + ' - ' + err.longMessage);
-  });
+   .then(function (result) {
+     console.log("Youpla! Redirect to: " + result.redirectURL);
+   })
+   .catch(err => {
+     console.log("Wtf happened: " + err.shortMessage + ' - ' + err.longMessage);
+   });
 ```
 
 ## API
