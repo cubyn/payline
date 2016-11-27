@@ -23,7 +23,7 @@ var payline = new Payline('<% userId %>', '<% userPass %>', '<% url wsdl (option
 ## Example using doWebPayment
 
 ``` javascript
-payline.runAction('doWebPayment', '{'
+payline.runAction('doWebPayment', {
     payment: {
     attributes: {
       xsi_type: {
