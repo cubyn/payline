@@ -24,30 +24,30 @@ var payline = new Payline('<% userId %>', '<% userPass %>', '<% url wsdl (option
 
 ``` javascript
 payline.runAction('doWebPayment', '{'
-    + 'payment: {'
-    + 'attributes: {'
-    +    'xsi_type: {'
-    +      'type: "payment"'
-    +      'xmlns: "http://obj.ws.payline.experian.com"'
-    +    '}'
-    +  '},'
-    +  'amount: 123,'
-    +  'currency: 978,'
-    +  'action: 101,'
-    +  'mode: "CPT",'
-    +  'contractNumber: "1234567"'
-    + '},'
-    + 'returnURL: "https://google.com",'
-    + 'cancelURL: "http://google.com",'
-    + 'order: {'
-    +  'ref: "1576576",'
-    +  'amount: 123,'
-    +  'currency: 978,'
-    +  'date: "20/06/2015 20:21"'
-    + '},'
-    + 'selectedContractList: null,'
-    + 'buyer: {}'
-    + '}')
+    payment: {
+    attributes: {
+      xsi_type: {
+          type: "payment"
+          xmlns: "http://obj.ws.payline.experian.com"
+        }
+      },
+      amount: 123,
+      currency: 978,
+      action: 101,
+      mode: "CPT",
+      contractNumber: "1234567"
+     },
+     returnURL: "https://google.com",
+     cancelURL: "http://google.com",
+     order: {
+      ref: "1576576",
+      amount: 123,
+      currency: 978,
+      date: "20/06/2015 20:21"
+     },
+     selectedContractList: null,
+     buyer: {}
+   })
   .then(function (result) {
     console.log("Youpla! Redirect to: " + result.redirectURL);
   }, function (err) {
