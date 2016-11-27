@@ -1,30 +1,32 @@
 {
-  "name": "payline",
-  "version": "0.0.3",
-  "description": "NodeJS SDK for payline.com API",
+  "name": "flav-payline",
+  "version": "0.0.6",
+  "description": "Fork of cubyn/payline",
   "main": "index.js",
   "scripts": {
     "lint": "eslint src",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "mocha",
     "prepublish": "gulp dist"
   },
-  "homepage": "https://github.com/cubyn/payline",
+  "homepage": "https://github.com/Flavien-Pensato/payline",
   "repository": {
     "type": "git",
-    "url": "git://github.com/cubyn/payline.git"
+    "url": "git@github.com:Flavien-Pensato/payline.git"
   },
-  "author": "Cubyn",
+  "author": "Flavien-Pensato",
   "license": "MIT",
   "dependencies": {
-    "bluebird": "2.10.x",
-    "debug": "2.2.x",
-    "soap": "^0.9.x"
+    "babel-eslint": "^7.1.1",
+    "soap": "^0.18.x"
   },
   "devDependencies": {
     "babel": "^5.8.23",
+    "debug": "^2.3.3",
+    "ejson": "^2.1.2",
     "eslint": "^3.10.2",
     "gulp": "^3.9.0",
     "gulp-babel": "^5.3.0",
-    "gulp-mocha": "^2.1.3"
+    "gulp-mocha": "^2.1.3",
+    "mocha": "^3.2.0"
   }
 }
