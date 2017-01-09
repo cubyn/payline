@@ -285,6 +285,7 @@ export default class Payline {
             }, parseErrors);
     }
 }
+
 Payline.CURRENCIES = CURRENCIES;
 
 function parseErrors(error) {
@@ -312,6 +313,6 @@ function formatNow() {
     var hour = now.getHours().toString();
     var minute = now.getMinutes().toString();
     // DD/MM/YYYY HH:mm
-    return (day[1] ? day : "0" + day[0]) + "/" + (month[1] ? month : "0" + month[0]) + "/" + year +
-        " " + (hour[1] ? hour : "0" + hour[0]) + ":" + (minute[1] ? minute : "0" + minute[0]);
+    return (day[1] ? day : '0' + day[0]) + '/' + (month[1] ? month : '0' + month[0]) + '/' + year +
+        ' ' + (hour[1] ? hour : '0' + hour[0]) + ':' + (minute[1] ? minute : '0' + minute[0]);
 }

@@ -79,9 +79,9 @@ payline.doWebPayment(123, 'A-PAY-TEST', '20/06/2015 20:21', 'http://www.wexample
 
 
 ```
-gulp watch
+npm run watch
 
 # this module is written in ES6 - so it has to be transpiled
-# before being published to NPM
+# before being published to NPM. check the package.json prepublish script
 
 ```
