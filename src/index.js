@@ -1,3 +1,3 @@
-import payline from './Payline.js';
+import payline from './Payline';
 
 module.exports = payline;
