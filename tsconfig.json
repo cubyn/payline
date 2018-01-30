@@ -1,0 +1,21 @@
+{
+    "include": [
+        "**/*.ts"
+    ],
+    "exclude": [
+        "node_modules"
+    ],
+    "compilerOptions": {
+        "noImplicitAny": false,
+        "target": "ES2017",
+        "types": [
+            "node"
+        ],
+        "lib": [
+            "ES2017"
+        ],
+        "module": "commonjs",
+        "sourceMap": true,
+        "experimentalDecorators": true
+    }
+}
