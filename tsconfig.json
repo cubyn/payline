@@ -14,6 +14,7 @@
         "lib": [
             "ES2017"
         ],
+        "strictNullChecks": true,
         "module": "commonjs",
         "sourceMap": true,
         "experimentalDecorators": true

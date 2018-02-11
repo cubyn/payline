@@ -1,11 +1,33 @@
-import soap from 'soap';
-import Promise from 'bluebird';
-import debugLib from 'debug';
-import path from 'path';
+import * as soap from "soap";
+import * as _debug from "debug";
+import * as path from "path";
 
-const debug = debugLib('payline');
 
-const DEFAULT_WSDL = path.join(__dirname, 'WebPaymentAPI.v4.44.wsdl');
+const debug = _debug("payline");
+
+export const enum Environment { homologation = "homologation", production = "production" };
+export const enum Operation { webPayment = "webPayment", directPayment = "directPayment", extended = "extended" };
+
+export type EnvironmentsProperty<T> = {[key in Environment]:T};
+export type OperationsProperty<T> = {[key in Operation]:T};
+
+
+const DEFAULT_ENDPOINTS_PREFIX: EnvironmentsProperty<string> = {
+    homologation: "https://homologation.payline.com/V4/services/",
+    production: "https://services.payline.com/V4/services/",
+};
+
+const DEFAULT_WSDLS_PREFIX: EnvironmentsProperty<string> = {
+    homologation: path.join(__dirname, "wsdl/homologation") + "/",
+    production: path.join(__dirname, "wsdl/production") + "/",
+};
+
+const DEFAULT_WSDLS_NAME: OperationsProperty<string> = {
+    webPayment: "WebPaymentAPI.wsdl",
+    directPayment: "DirectPaymentAPI.wsdl",
+    extended: "ExtendedAPI.wsdl",
+};
+
 const MIN_AMOUNT = 100;
 const ACTIONS = {
     AUTHORIZATION: 100,
@@ -30,38 +52,110 @@ const CURRENCIES = {
     GBP: 826
 };
 
-export default class Payline {
+class PaylineCore {
 
-    constructor(user, pass, contractNumber, wsdl = DEFAULT_WSDL) {
-        if (!user || !pass || !contractNumber) {
-            throw new Error('All of user / pass / contractNumber should be defined');
-        }
-        this.user = user;
-        this.pass = pass;
-        this.contractNumber = contractNumber;
-        this.wsdl = wsdl;
+    private _soapClient: OperationsProperty<any | null> = {
+        directPayment: null,
+        webPayment: null,
+        extended: null,
+    };
+
+    constructor(private merchantId: string, private accessKey: string, public contractNumber: string,
+                public enviromnent: Operation,
+                public endpointsPrefix: EnvironmentsProperty<string> = DEFAULT_ENDPOINTS_PREFIX,
+                public wsdlsPrefix: EnvironmentsProperty<string> = DEFAULT_WSDLS_PREFIX,
+                public wsdlsName: OperationsProperty<string> = DEFAULT_WSDLS_NAME,) {
     }
 
-    initialize() {
-        if (!this.initializationPromise) {
-            this.initializationPromise = Promise.fromNode(callback => {
-                return soap.createClient(this.wsdl, {}, callback);
-            })
-            .then(client => {
-                client.setSecurity(new soap.BasicAuthSecurity(this.user, this.pass));
-                client.on('request', (xml) => {
-                    debug('REQUEST', xml);
-                });
-                client.on('response', (xml) => {
-                    debug('RESPONSE', xml);
-                });
-                return client;
-            });
-        }
-        return this.initializationPromise;
+    protected wsdl(): string {
+        return "";
     }
 
-    createOrUpdateWallet(walletId, card, update = false) {
+    protected soapParams(): {} {
+        return {};
+    }
+
+    private async initializeAll(): Promise<void> {
+        Object.keys(this._soapClient).forEach((operation: Operation) => {
+            if (!this._soapClient[operation]) {
+                this.initialize(operation);
+            }
+        });
+    }
+
+    /**
+     * Initialize the SOAP client as a singleton by:
+     * - getting WSDL files
+     * - generating clinet object from WSDL files
+     * - setting basic auth on the soap
+     * - adding debug for the operations using debug lib with payline key
+     * @return {Promise<any>} promise to the soap client
+     */
+    private async initialize(operation: Operation): Promise<void> {
+        this._soapClient[operation] = await soap.createClientAsync(this.wsdl(), this.soapParams());
+        const basicAuthSecurity = new soap.BasicAuthSecurity(this.merchantId, this.accessKey);
+
+        this._soapClient[operation].setSecurity(basicAuthSecurity);
+        this._soapClient[operation].on('request', (xml: string): void => {
+            debug('REQUEST', xml);
+        });
+        this._soapClient[operation].on('response', (xml: string): void => {
+            debug('RESPONSE', xml);
+        });
+    }
+
+    private isResultSuccessful(result: any): boolean {
+        return result && ['02500', '00000'].indexOf(result.code) !== -1;
+    }
+
+    private async _runAction(client: any, action: string, args: any): Promise<any> {
+        const { result, response } = await new Promise<any>((resolve, reject) => {
+            try {
+                client[action](args, resolve);
+            } catch (error) {
+                reject(error);
+            }
+        });
+
+        if (this.isResultSuccessful(result)) {
+            return result;
+        } else {
+            throw result;
+        }
+    }
+
+    /**
+     * Call any action that is defined in the WSDL files with the arguments
+     * @param {string} action name of the action to call
+     * @param args parameters of the call
+     * @return {<any>} promise of the response from payline
+     */
+    public async runAction(action: string, args: any): Promise<any> {
+        await this.initializeAll();
+        const client = Object.values(this._soapClient)
+            .find(client => !!client && !!client[action]);
+
+        if (!!client) {
+            throw new Error("Wrong action for the API");
+        }
+
+        try {
+            return this._runAction(client, action, args);
+        } catch (error) {
+            const response = error.response;
+            if (response.statusCode === 401) {
+                return Promise.reject({ shortMessage: "Wrong API credentials", paylineError: error });
+            } else {
+                return Promise.reject({ shortMessage: "Wrong API call", paylineError: error });
+            }
+        }
+    }
+
+}
+
+export default class Payline extends PaylineCore {
+
+    private async createOrUpdateWallet(walletId, card, update = false): Promise<any> {
         const wallet = {
             contractNumber: this.contractNumber,
             wallet: {
@@ -70,28 +164,26 @@ export default class Payline {
                 card
             }
         };
-        return this.initialize()
-            .then(client => Promise.fromNode(callback => {
-                client.createWallet(wallet, callback);
-            }))
-            .spread(({ result, response }) => {
-                if (isSuccessful(result)) {
-                    return { walletId };
-                }
 
-                throw result;
-            }, parseErrors);
+        const result = await this.runAction("createWallet", wallet);
+        return { walletId, raw: result };
     }
 
-    updateWallet(walletId, card) {
-        return this.createOrUpdateWallet.apply(this, [walletId, card, true]);
+    public async updateWallet(walletId, card): Promise<any> {
+        return this.createOrUpdateWallet(walletId, card, true);
     }
 
-    createWallet(walletId, card) {
-        return this.createOrUpdateWallet.apply(this, [walletId, card, false]);
+    public async createWallet(walletId, card): Promise<any> {
+        return this.createOrUpdateWallet(walletId, card, false);
     }
 
-    getWallet(walletId) {
+    public async getWallet(walletId): Promise<any> {
+        const result = await this.runAction("getWallet", {
+            contractNumber: this.contractNumber,
+            walletId
+        });
+        return { walletId, raw: result };
+
         return this.initialize()
             .then(client => Promise.fromNode(callback => {
                 client.getWallet({
@@ -288,21 +380,8 @@ export default class Payline {
 
 Payline.CURRENCIES = CURRENCIES;
 
-function parseErrors(error) {
-    const response = error.response;
-    if (response.statusCode === 401) {
-        return Promise.reject({ shortMessage: 'Wrong API credentials' });
-    }
-
-    return Promise.reject({ shortMessage: 'Wrong API call' });
-}
-
 function generateId() {
     return `${Math.ceil(Math.random() * 100000)}`;
-}
-
-function isSuccessful(result) {
-    return result && ['02500', '00000'].indexOf(result.code) !== -1;
 }
 
 function formatNow() {
