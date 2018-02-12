@@ -1,39 +1,19 @@
 import * as soap from "soap";
 import * as _debug from "debug";
-import * as path from "path";
+import {
+    ACTIONS,
+    CURRENCIES,
+    DEFAULT_ENDPOINTS_PREFIX,
+    DEFAULT_WSDLS_PREFIX,
+    DEFAULT_WSDLS_NAME,
+    Operation,
+    OperationsProperty,
+    EnvironmentsProperty
+} from "./model";
 
 
 const debug = _debug("payline");
 
-export const enum Environment { homologation = "homologation", production = "production" };
-export const enum Operation { webPayment = "webPayment", directPayment = "directPayment", extended = "extended" };
-
-export type EnvironmentsProperty<T> = {[key in Environment]:T};
-export type OperationsProperty<T> = {[key in Operation]:T};
-
-
-const DEFAULT_ENDPOINTS_PREFIX: EnvironmentsProperty<string> = {
-    homologation: "https://homologation.payline.com/V4/services/",
-    production: "https://services.payline.com/V4/services/",
-};
-
-const DEFAULT_WSDLS_PREFIX: EnvironmentsProperty<string> = {
-    homologation: path.join(__dirname, "wsdl/homologation") + "/",
-    production: path.join(__dirname, "wsdl/production") + "/",
-};
-
-const DEFAULT_WSDLS_NAME: OperationsProperty<string> = {
-    webPayment: "WebPaymentAPI.wsdl",
-    directPayment: "DirectPaymentAPI.wsdl",
-    extended: "ExtendedAPI.wsdl",
-};
-
-const MIN_AMOUNT = 100;
-const ACTIONS = {
-    AUTHORIZATION: 100,
-    PAYMENT: 101, // validation + payment
-    VALIDATION: 201
-};
 
 // soap library has trouble loading element types
 // so we sometimes have to override inferred namespace
@@ -46,11 +26,7 @@ function ns(type) {
     };
 }
 
-const CURRENCIES = {
-    EUR: 978,
-    USD: 840,
-    GBP: 826
-};
+
 
 class PaylineCore {
 
@@ -200,8 +176,8 @@ export default class Payline extends PaylineCore {
             }, parseErrors);
     }
 
-    makeWalletPayment(walletId, amount, currency = CURRENCIES.EUR) {
-        const body = {
+    public async doWalletPayment(walletId, amount, currency = CURRENCIES.EUR): Promise<any> {
+        const result = await this.runAction("doImmediateWalletPayment", {
             payment: {
                 attributes: ns('payment'),
                 amount,
@@ -218,7 +194,9 @@ export default class Payline extends PaylineCore {
                 date: formatNow()
             },
             walletId
-        };
+        });
+        return { transaction: result.id, raw: result };
+
         return this.initialize()
             .then(client => Promise.fromNode(callback => {
                 client.doImmediateWalletPayment(body, callback);
