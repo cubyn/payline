@@ -6,9 +6,12 @@ import {
     DEFAULT_ENDPOINTS_PREFIX,
     DEFAULT_WSDLS_PREFIX,
     DEFAULT_WSDLS_NAME,
+    MIN_AMOUNT,
     Operation,
     OperationsProperty,
-    EnvironmentsProperty
+    EnvironmentsProperty,
+    paylineDate,
+    paylineNow,
 } from "./model";
 
 
@@ -26,6 +29,9 @@ function ns(type) {
     };
 }
 
+function generateId() {
+    return `${Math.ceil(Math.random() * 100000)}`;
+}
 
 
 class PaylineCore {
@@ -84,19 +90,24 @@ class PaylineCore {
         return result && ['02500', '00000'].indexOf(result.code) !== -1;
     }
 
+    private extractResult(result: any): any {
+        return result.result || result;
+    }
+
     private async _runAction(client: any, action: string, args: any): Promise<any> {
-        const { result, response } = await new Promise<any>((resolve, reject) => {
+        const response = await new Promise<any>((resolve, reject) => {
             try {
                 client[action](args, resolve);
             } catch (error) {
                 reject(error);
             }
         });
+        const result = this.extractResult(response);
 
         if (this.isResultSuccessful(result)) {
-            return result;
+            return { result: result, raw: response };
         } else {
-            throw result;
+            throw { result: result, raw: response };
         }
     }
 
@@ -142,7 +153,7 @@ export default class Payline extends PaylineCore {
         };
 
         const result = await this.runAction("createWallet", wallet);
-        return { walletId, raw: result };
+        return { walletId: result.wallet, raw: result };
     }
 
     public async updateWallet(walletId, card): Promise<any> {
@@ -158,22 +169,7 @@ export default class Payline extends PaylineCore {
             contractNumber: this.contractNumber,
             walletId
         });
-        return { walletId, raw: result };
-
-        return this.initialize()
-            .then(client => Promise.fromNode(callback => {
-                client.getWallet({
-                    contractNumber: this.contractNumber,
-                    walletId
-                }, callback);
-            }))
-            .spread(({ result, wallet = null }, response) => {
-                if (isSuccessful(result)) {
-                    return wallet;
-                }
-
-                throw result;
-            }, parseErrors);
+        return { walletId: result.wallet, raw: result };
     }
 
     public async doWalletPayment(walletId, amount, currency = CURRENCIES.EUR): Promise<any> {
@@ -191,72 +187,15 @@ export default class Payline extends PaylineCore {
                 ref: `order_${generateId()}`,
                 amount,
                 currency,
-                date: formatNow()
+                date: paylineNow()
             },
             walletId
         });
-        return { transaction: result.id, raw: result };
-
-        return this.initialize()
-            .then(client => Promise.fromNode(callback => {
-                client.doImmediateWalletPayment(body, callback);
-            }))
-            .spread(({ result, transaction = null }) => {
-                if (isSuccessful(result)) {
-                    return { transactionId: transaction.id };
-                }
-
-                throw result;
-            }, parseErrors);
+        return { transactionId: result.transaction && result.transaction.id, raw: result };
     }
 
-    validateCard(card, tryAmount = 100, currency = CURRENCIES.EUR) {
-        // 1 is the minimum here
-        tryAmount = Math.max(tryAmount, MIN_AMOUNT);
-        var client;
-        return this.initialize()
-            .then((c) => Promise.fromNode(callback => {
-                client = c;
-                client.doAuthorization({
-                    payment: {
-                        attributes: ns('payment'),
-                        amount: tryAmount,
-                        currency,
-                        action: ACTIONS.AUTHORIZATION,
-                        mode: 'CPT',
-                        contractNumber: this.contractNumber
-                    },
-                    order: {
-                        attributes: ns('order'),
-                        ref: `order_${generateId()}`,
-                        amount: tryAmount,
-                        currency,
-                        date: formatNow()
-                    },
-                    card: {
-                        attributes: ns('card'),
-                        number: card.number,
-                        type: card.type,
-                        expirationDate: card.expirationDate,
-                        cvx: card.cvx
-                    }
-                }, callback);
-            }))
-            .spread(({ result, transaction = null }) => {
-                if (isSuccessful(result)) {
-                    return Promise.fromNode(callback => client.doReset({
-                        transactionID: transaction.id,
-                        comment: 'Card validation cleanup'
-                    }, callback))
-                    .return(true);
-                }
-
-                return false;
-            }, parseErrors);
-    }
-
-    doAuthorization(reference, card, tryAmount, currency = CURRENCIES.EUR) {
-        const body = {
+    public async doAuthorization(reference, card, tryAmount, currency = CURRENCIES.EUR): Promise<any> {
+        const result = await this.runAction("doAuthorization", {
             payment: {
                 attributes: ns('payment'),
                 amount: tryAmount,
@@ -270,7 +209,7 @@ export default class Payline extends PaylineCore {
                 ref: reference,
                 amount: tryAmount,
                 currency,
-                date: formatNow()
+                date: paylineNow()
             },
             card: {
                 attributes: ns('card'),
@@ -279,22 +218,12 @@ export default class Payline extends PaylineCore {
                 expirationDate: card.expirationDate,
                 cvx: card.cvx
             }
-        };
-        return this.initialize()
-                .then(client => Promise.fromNode(callback => {
-                    client.doAuthorization(body, callback);
-                }))
-                .spread(({ result, transaction = null }) => {
-                    if (isSuccessful(result)) {
-                        return { transactionId: transaction.id };
-                    }
-
-                    throw result;
-                }, parseErrors);
+        });
+        return { transactionId: result.transaction && result.transaction.id, raw: result };
     }
 
-    doCapture(transactionID, tryAmount, currency = CURRENCIES.EUR) {
-        const body = {
+    public async doCapture(transactionID, tryAmount, currency = CURRENCIES.EUR): Promise<any> {
+        const result = await this.runAction("doCapture", {
             payment: {
                 attributes: ns('payment'),
                 amount: tryAmount,
@@ -304,22 +233,34 @@ export default class Payline extends PaylineCore {
                 contractNumber: this.contractNumber
             },
             transactionID
-        };
-        return this.initialize()
-            .then(client => Promise.fromNode(callback => {
-                client.doCapture(body, callback);
-            }))
-            .spread(({ result, transaction = null }) => {
-                if (isSuccessful(result)) {
-                    return { transactionId: transaction.id };
-                }
-
-                throw result;
-            }, parseErrors);
+        });
+        return { transactionId: result.transaction && result.transaction.id, raw: result };
     }
 
-    doWebPayment(amount, ref, date, returnURL, cancelURL, currency = CURRENCIES.EUR) {
-        var body = {
+    public async doReset(transactionID: string, comment: string = "Card validation cleanup"): Promise<any> {
+        const result = await this.runAction("doReset", {
+            transactionID,
+            comment: comment,
+        });
+        return { transactionId: result.transaction && result.transaction.id, raw: result };
+    }
+
+    public async validateCard(card, tryAmount = 100, currency = CURRENCIES.EUR, referencePrefix: string = "order_"): Promise<any> {
+        // 1 is the minimum here
+        tryAmount = Math.max(tryAmount, MIN_AMOUNT);
+        let authorization: any = null;
+        try {
+            authorization = await this.doAuthorization(`${referencePrefix}${generateId()}`, card, tryAmount, currency);
+        } catch {
+            return {success: false, raw: {authorization, reset: null}};
+        }
+
+        const reset = await this.doReset(authorization && authorization.transactionId);
+        return { success: true, raw: {authorization, reset} }
+    }
+
+    public async doWebPayment(amount, ref, date, returnURL, cancelURL, currency = CURRENCIES.EUR): Promise<any> {
+        const result = await this.runAction("doWebPayment", {
             payment: {
                 attributes: ns('payment'),
                 amount,
@@ -340,35 +281,7 @@ export default class Payline extends PaylineCore {
             },
             selectedContractList: null,
             buyer: {}
-        };
-
-        return this.initialize()
-            .then(client => Promise.fromNode(callback => {
-                client.doWebPayment(body, callback);
-            }))
-            .spread(response => {
-                if (isSuccessful(response.result)) {
-                    return response;
-                }
-
-                throw response.result;
-            }, parseErrors);
+        });
+        return { transactionId: result.transaction && result.transaction.id, raw: result };
     }
-}
-
-Payline.CURRENCIES = CURRENCIES;
-
-function generateId() {
-    return `${Math.ceil(Math.random() * 100000)}`;
-}
-
-function formatNow() {
-    var now = new Date();
-    var year = now.getFullYear().toString();
-    var month = (now.getMonth() + 1).toString(); // getMonth() is zero-based
-    var day = now.getDate().toString();
-    var hour = now.getHours().toString();
-    var minute = now.getMinutes().toString();
-    // DD/MM/YYYY HH:mm
-    return `${(day[1] ? day : `0${day[0]}`)}/${(month[1] ? month : `0${month[0]}`)}/${year} ${(hour[1] ? hour : `0${hour[0]}`)}:${(minute[1] ? minute : `0${minute[0]}`)}`;
 }

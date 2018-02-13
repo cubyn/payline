@@ -36,3 +36,17 @@ export const CURRENCIES = {
     USD: 840,
     GBP: 826
 };
+
+export const paylineDate = (date: Date): String => {
+    var year = date.getFullYear().toString();
+    var month = (date.getMonth() + 1).toString(); // getMonth() is zero-based
+    var day = date.getDate().toString();
+    var hour = date.getHours().toString();
+    var minute = date.getMinutes().toString();
+    // DD/MM/YYYY HH:mm
+    return `${(day[1] ? day : `0${day[0]}`)}/${(month[1] ? month : `0${month[0]}`)}/${year} ${(hour[1] ? hour : `0${hour[0]}`)}:${(minute[1] ? minute : `0${minute[0]}`)}`;
+};
+
+export const paylineNow = (): String => {
+    return paylineDate(new Date());
+};
