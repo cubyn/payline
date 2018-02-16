@@ -3,38 +3,31 @@ import * as _debug from "debug";
 import {
     ACTIONS,
     CURRENCIES,
+    MODE,
     DEFAULT_ENDPOINTS_PREFIX,
     DEFAULT_WSDLS_PREFIX,
     DEFAULT_WSDLS_NAME,
     MIN_AMOUNT,
+    Card,
+    EnvironmentsProperty,
     Operation,
     OperationsProperty,
-    EnvironmentsProperty,
-    paylineDate,
-    paylineNow,
+    Order,
+    Owner,
+    Payment,
+    TransactionResult,
+    ValidationResult,
+    Wallet,
+    SuccessResult,
+    WalletResult,
 } from "./model";
 
 
 const debug = _debug("payline");
 
-
-// soap library has trouble loading element types
-// so we sometimes have to override inferred namespace
-function ns(type) {
-    return {
-        xsi_type: {
-            type,
-            xmlns: 'http://obj.ws.payline.experian.com'
-        }
-    };
-}
-
-function generateId() {
-    return `${Math.ceil(Math.random() * 100000)}`;
-}
-
-
 class PaylineCore {
+
+    public paylineVersion: string = "18";
 
     private _soapClient: OperationsProperty<any | null> = {
         directPayment: null,
@@ -94,10 +87,66 @@ class PaylineCore {
         return result.result || result;
     }
 
+    /**
+     * soap library has trouble loading element types
+     * so we sometimes have to override inferred namespace
+     * @param type
+     * @returns {{xsi_type: {type: any; xmlns: string}}}
+     */
+    private namespace(type: string): any {
+        return {
+            xsi_type: {
+                type,
+                xmlns: "http://obj.ws.payline.experian.com",
+            }
+        };
+    }
+
+    private paylineDate(date: Date): String {
+        const year = date.getFullYear().toString();
+        const month = (date.getMonth() + 1).toString(); // getMonth() is zero-based
+        const day = date.getDate().toString();
+        const hour = date.getHours().toString();
+        const minute = date.getMinutes().toString();
+        // DD/MM/YYYY HH:mm
+        return `${(day[1] ? day : `0${day[0]}`)}/${(month[1] ? month : `0${month[0]}`)}/${year} ${(hour[1] ? hour : `0${hour[0]}`)}:${(minute[1] ? minute : `0${minute[0]}`)}`;
+    };
+
+    private ensureAttributes(args: any): any {
+        Object.keys(args).forEach(name => {
+            if (args[name].constructor === Object) {
+                args[name].attributes = args[name].attributes || this.namespace(name);
+                args[name] = this.ensureAttributes(args[name]);
+            }
+            if (args[name].constructor === Array) {
+                args[name].forEach(this.ensureAttributes.bind(this));
+            }
+            if (args[name].constructor === String && Date.parse(args[name]).constructor === Number) {
+                args[name] = new Date(args[name]);
+            }
+            if (name === "expirationDate" && args[name] instanceof Date) {
+                const year = args[name].getFullYear().toString();
+                const month = (args[name].getMonth() + 1).toString(); // getMonth() is zero-based
+                args[name] = `${(month[1] ? month : `0${month[0]}`)}${year.slice(-2)}`;
+            }
+            if (name === "expirationDate") {
+                args[name] = args[name].replace("/", ""); // replace 12/07 to 1207
+            }
+            if (args[name] instanceof Date) {
+                args[name] = this.paylineDate(args[name]);
+            }
+            if (name === "amout" && args[name] instanceof Number) {
+
+            }
+        });
+        return args;
+    }
+
     private async _runAction(client: any, action: string, args: any): Promise<any> {
+        args.version = args.version || this.paylineVersion;
         const response = await new Promise<any>((resolve, reject) => {
             try {
-                client[action](args, resolve);
+                client[action](this.ensureAttributes(args), resolve);
             } catch (error) {
                 reject(error);
             }
@@ -142,146 +191,160 @@ class PaylineCore {
 
 export default class Payline extends PaylineCore {
 
-    private async createOrUpdateWallet(walletId, card, update = false): Promise<any> {
-        const wallet = {
-            contractNumber: this.contractNumber,
-            wallet: {
-                attributes: ns('wallet'),
-                walletId,
-                card
-            }
+    public defaultCurrency: CURRENCIES = CURRENCIES.USD;
+    public defaultMode: MODE = MODE.CPT;
+    public defaultReferencePrefix: string = "order_";
+
+    protected generateId(): string {
+        return `${Math.ceil(Math.random() * 100000)}`;
+    }
+
+    private setOrderDefaults(order: Order, referencePrefix?: string): Order {
+        order.date = order.date || new Date(); // now if date not exist
+        order.ref = order.ref || `${referencePrefix || this.defaultReferencePrefix}${this.generateId()}`;
+        return order;
+    }
+
+    private setPaymentDefaults(payment: Payment, action: ACTIONS, currency?: CURRENCIES): Payment {
+        payment.mode = payment.mode || this.defaultMode;
+        payment.action = action;
+        payment.currency = payment.currency || currency || this.defaultCurrency;
+        payment.contractNumber = this.contractNumber;
+        return payment;
+    }
+
+    private extractTransactionalResult(raw: any): TransactionResult {
+        return { id: raw.transaction && raw.transaction.id, raw, }
+    }
+
+    protected generateWallet(walletId: string, card: Card): Wallet {
+        return {
+            walletId,
+            card,
         };
-
-        const result = await this.runAction("createWallet", wallet);
-        return { walletId: result.wallet, raw: result };
     }
 
-    public async updateWallet(walletId, card): Promise<any> {
-        return this.createOrUpdateWallet(walletId, card, true);
+    public async createWallet(walletId, card: Card, owner?: Owner): Promise<WalletResult> {
+        const raw = await this.runAction("createWallet", {
+            contractNumber: this.contractNumber,
+            wallet: this.generateWallet(walletId, card),
+            owner,
+        });
+        return { wallet: raw.wallet, raw, };
     }
 
-    public async createWallet(walletId, card): Promise<any> {
-        return this.createOrUpdateWallet(walletId, card, false);
+    public async updateWallet(walletId, card: Card, owner?: Owner): Promise<WalletResult> {
+        const raw = await this.runAction("updateWallet", {
+            contractNumber: this.contractNumber,
+            wallet: this.generateWallet(walletId, card),
+            owner,
+        });
+        return { wallet: raw.wallet, raw, };
     }
 
-    public async getWallet(walletId): Promise<any> {
-        const result = await this.runAction("getWallet", {
+    public async getWallet(walletId): Promise<WalletResult> {
+        const raw = await this.runAction("getWallet", {
             contractNumber: this.contractNumber,
             walletId
         });
-        return { walletId: result.wallet, raw: result };
+        return { wallet: raw.wallet, raw, };
     }
 
-    public async doWalletPayment(walletId, amount, currency = CURRENCIES.EUR): Promise<any> {
-        const result = await this.runAction("doImmediateWalletPayment", {
-            payment: {
-                attributes: ns('payment'),
-                amount,
-                currency,
-                action: ACTIONS.PAYMENT,
-                mode: 'CPT',
-                contractNumber: this.contractNumber
-            },
-            order: {
-                attributes: ns('order'),
-                ref: `order_${generateId()}`,
-                amount,
-                currency,
-                date: paylineNow()
-            },
-            walletId
+    public async disableWallet(walletId): Promise<SuccessResult> {
+        const raw = await this.runAction("disableWallet", {
+            contractNumber: this.contractNumber,
+            walletIdList: [walletId],
         });
-        return { transactionId: result.transaction && result.transaction.id, raw: result };
+        return { success: true, raw };
     }
 
-    public async doAuthorization(reference, card, tryAmount, currency = CURRENCIES.EUR): Promise<any> {
-        const result = await this.runAction("doAuthorization", {
-            payment: {
-                attributes: ns('payment'),
-                amount: tryAmount,
-                currency,
-                action: ACTIONS.AUTHORIZATION,
-                mode: 'CPT',
-                contractNumber: this.contractNumber
-            },
-            order: {
-                attributes: ns('order'),
-                ref: reference,
-                amount: tryAmount,
-                currency,
-                date: paylineNow()
-            },
-            card: {
-                attributes: ns('card'),
-                number: card.number,
-                type: card.type,
-                expirationDate: card.expirationDate,
-                cvx: card.cvx
-            }
-        });
-        return { transactionId: result.transaction && result.transaction.id, raw: result };
+    public async doWalletPayment(walletId, payment: Payment, order: Order,
+                                 referencePrefix?: string, currency?: CURRENCIES): Promise<any> {
+        this.setPaymentDefaults(payment, ACTIONS.PAYMENT, currency);
+        this.setOrderDefaults(order, referencePrefix);
+        return this.extractTransactionalResult(await this.runAction("doImmediateWalletPayment", {
+            payment,
+            order,
+            walletId,
+        }));
     }
 
-    public async doCapture(transactionID, tryAmount, currency = CURRENCIES.EUR): Promise<any> {
-        const result = await this.runAction("doCapture", {
-            payment: {
-                attributes: ns('payment'),
-                amount: tryAmount,
-                currency,
-                action: ACTIONS.VALIDATION,
-                mode: 'CPT',
-                contractNumber: this.contractNumber
-            },
-            transactionID
-        });
-        return { transactionId: result.transaction && result.transaction.id, raw: result };
+    public async scheduleWalletPayment(walletId, payment: Payment, order: Order, scheduledDate: Date,
+                                 referencePrefix?: string, currency?: CURRENCIES): Promise<any> {
+        this.setPaymentDefaults(payment, ACTIONS.PAYMENT, currency);
+        this.setOrderDefaults(order, referencePrefix);
+        return this.extractTransactionalResult(await this.runAction("doImmediateWalletPayment", {
+            payment,
+            order,
+            walletId,
+            scheduledDate,
+        }));
     }
 
-    public async doReset(transactionID: string, comment: string = "Card validation cleanup"): Promise<any> {
-        const result = await this.runAction("doReset", {
+    public async doAuthorization(payment: Payment, order: Order, card: Card,
+            referencePrefix?: string, currency?: CURRENCIES): Promise<TransactionResult> {
+        this.setPaymentDefaults(payment, ACTIONS.AUTHORIZATION, currency);
+        this.setOrderDefaults(order, referencePrefix);
+        return this.extractTransactionalResult(await this.runAction("doAuthorization", {
+            payment,
+            order,
+            card,
+        }));
+    }
+
+    public async doReAuthorization(transactionID: string, payment: Payment, order: Order, card: Card,
+                                   referencePrefix?: string, currency?: CURRENCIES): Promise<TransactionResult> {
+        this.setPaymentDefaults(payment, ACTIONS.AUTHORIZATION, currency);
+        this.setOrderDefaults(order, referencePrefix);
+        return this.extractTransactionalResult(await this.runAction("doReAuthorization", {
             transactionID,
-            comment: comment,
-        });
-        return { transactionId: result.transaction && result.transaction.id, raw: result };
+            payment,
+            order,
+        }));
     }
 
-    public async validateCard(card, tryAmount = 100, currency = CURRENCIES.EUR, referencePrefix: string = "order_"): Promise<any> {
+    public async doCapture(transactionID, payment: Payment, currency?: CURRENCIES): Promise<TransactionResult> {
+        this.setPaymentDefaults(payment, ACTIONS.VALIDATION, currency);
+        return this.extractTransactionalResult(await this.runAction("doCapture", {
+            payment,
+            transactionID,
+        }));
+    }
+
+    public async doReset(transactionID: string,
+            comment: string = "Card validation cleanup"): Promise<TransactionResult> {
+        return this.extractTransactionalResult(await this.runAction("doReset", {
+            transactionID,
+            comment,
+        }));
+    }
+
+    public async validateCard(payment: Payment, order: Order, card: Card,
+                              referencePrefix?: string, currency?: CURRENCIES): Promise<ValidationResult> {
         // 1 is the minimum here
-        tryAmount = Math.max(tryAmount, MIN_AMOUNT);
+        order.amount = Math.max(order.amount, MIN_AMOUNT);
         let authorization: any = null;
         try {
-            authorization = await this.doAuthorization(`${referencePrefix}${generateId()}`, card, tryAmount, currency);
+            authorization = await this.doAuthorization(payment, order, card, referencePrefix, currency);
         } catch {
-            return {success: false, raw: {authorization, reset: null}};
+            return { success: false, raw: {authorization, reset: null} };
         }
 
         const reset = await this.doReset(authorization && authorization.transactionId);
         return { success: true, raw: {authorization, reset} }
     }
 
-    public async doWebPayment(amount, ref, date, returnURL, cancelURL, currency = CURRENCIES.EUR): Promise<any> {
-        const result = await this.runAction("doWebPayment", {
-            payment: {
-                attributes: ns('payment'),
-                amount,
-                currency,
-                action: ACTIONS.PAYMENT,
-                mode: 'CPT',
-                contractNumber: this.contractNumber
-            },
+    public async doWebPayment(payment: Payment, order: Order, returnURL, cancelURL, buyer: any = {},
+            selectedContractList: any = null, referencePrefix?, currency?): Promise<TransactionResult> {
+        this.setPaymentDefaults(payment, ACTIONS.PAYMENT, currency);
+        this.setOrderDefaults(order, referencePrefix);
+        return this.extractTransactionalResult(await this.runAction("doWebPayment", {
+            payment,
             returnURL,
             cancelURL,
-            order: {
-                attributes: ns('order'),
-                ref,
-                amount,
-                currency,
-                // Format : 20/06/2015 20:21
-                date
-            },
-            selectedContractList: null,
-            buyer: {}
-        });
-        return { transactionId: result.transaction && result.transaction.id, raw: result };
+            order,
+            selectedContractList,
+            buyer,
+        }));
     }
 }

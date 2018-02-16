@@ -7,6 +7,137 @@ export const enum Operation { webPayment = "webPayment", directPayment = "direct
 export type EnvironmentsProperty<T> = {[key in Environment]:T};
 export type OperationsProperty<T> = {[key in Operation]:T};
 
+export enum CURRENCIES {
+    EUR = 978,
+    USD = 840,
+    GBP = 826,
+}
+
+export enum ACTIONS {
+    AUTHORIZATION = 100,
+    PAYMENT = 101, // validation + payment
+    VALIDATION = 201
+}
+
+export enum MODE {
+    CPT = "CPT",
+}
+
+export interface Wallet {
+    walletId: string,
+    card: Card,
+    lastName?: string,
+    firstName?: string,
+    email?: string,
+    shippingAddress?: string,
+    comment?: string,
+    default?: string,
+    cardStatus?: string,
+    cardBrand?: string,
+}
+
+export interface PaymentData {
+    transactionID: string,
+    network: string,
+    tokenData: string,
+}
+
+export interface Card {
+    number?: string,
+    type?: string,
+    expirationDate?: Date,
+    cvx?: string,
+    encryptedData?: string,
+    encryptionKeyId?: string,
+    ownerBirthdayDate?: string,
+    password?: string,
+    cardPresent?: string,
+    cardholder?: string,
+    token?: string,
+    paymentData?: PaymentData,
+}
+
+export interface Payment {
+    amount: number,
+    currency: CURRENCIES,
+    action: ACTIONS,
+    mode: MODE,
+    contractNumber: string,
+    softDescriptor?: string,
+}
+
+export interface Order {
+    ref: string,
+    amount: number,
+    currency: CURRENCIES,
+    date: Date,
+}
+
+/**
+ * ISO 3166-1 Standard
+ */
+export interface Countries {
+    FR: "FR",
+    DE: "DE",
+    "GB": "GB",
+    "ES": "ES"
+    IT: "IT",
+    PT: "PT",
+    [country: string]: string,
+}
+
+export interface Address {
+    title?: string,
+    name?: string,
+    firstName?: string,
+    lastName?: string,
+    street1?: string,
+    street2?: string,
+    cityName?: string,
+    zipCode?: string,
+    country?: Countries, // 2 letter country code
+    phone?: string,
+    phoneType?: string,
+    state?: string,
+}
+
+export interface AddressOwner {
+    street?: string,
+    cityName?: string,
+    zipCode?: string,
+    country?: Countries, // 2 letter country code
+    phone?: string,
+}
+
+export interface Owner {
+    lastName?: string,
+    firstName?: string,
+    billingAddress?: AddressOwner,
+    issueCardDate?: Date,
+}
+
+export interface RawResult {
+    raw: any;
+}
+
+export interface TransactionResult extends RawResult {
+    id: string;
+}
+
+export interface SuccessResult extends RawResult {
+    success: boolean;
+}
+
+export interface ValidationResult extends SuccessResult {
+    raw: {
+        authorization: TransactionResult | null,
+        reset: TransactionResult | null;
+    };
+}
+
+export interface WalletResult extends RawResult {
+    wallet: Wallet;
+}
 
 export const DEFAULT_ENDPOINTS_PREFIX: EnvironmentsProperty<string> = {
     homologation: "https://homologation.payline.com/V4/services/",
@@ -24,29 +155,5 @@ export const DEFAULT_WSDLS_NAME: OperationsProperty<string> = {
     extended: "ExtendedAPI.wsdl",
 };
 
-export const MIN_AMOUNT = 100;
-export const ACTIONS = {
-    AUTHORIZATION: 100,
-    PAYMENT: 101, // validation + payment
-    VALIDATION: 201
-};
+export const MIN_AMOUNT = 1;
 
-export const CURRENCIES = {
-    EUR: 978,
-    USD: 840,
-    GBP: 826
-};
-
-export const paylineDate = (date: Date): String => {
-    var year = date.getFullYear().toString();
-    var month = (date.getMonth() + 1).toString(); // getMonth() is zero-based
-    var day = date.getDate().toString();
-    var hour = date.getHours().toString();
-    var minute = date.getMinutes().toString();
-    // DD/MM/YYYY HH:mm
-    return `${(day[1] ? day : `0${day[0]}`)}/${(month[1] ? month : `0${month[0]}`)}/${year} ${(hour[1] ? hour : `0${hour[0]}`)}:${(minute[1] ? minute : `0${minute[0]}`)}`;
-};
-
-export const paylineNow = (): String => {
-    return paylineDate(new Date());
-};
