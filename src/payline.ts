@@ -119,7 +119,7 @@ class PaylineCore {
     }
 
     private extractResult(result: any): any {
-        return result.result || result;
+        return result && result.result || result;
     }
 
     /**
@@ -149,21 +149,24 @@ class PaylineCore {
 
     private ensureAttributes(args: any): any {
         Object.keys(args)
-            .filter(name => name !== "attributes" && args[name])
+            .filter(name => name !== "attributes" && !!args[name])
             .forEach(name => {
                 if (args[name].constructor === Object) {
-                    args[name].attributes = args[name].attributes || this.namespace(name);
+                    // adding too much namesapces in the same node
+                    //args[name].attributes = args[name].attributes || this.namespace(name);
                     args[name] = this.ensureAttributes(args[name]);
                 }
                 if (args[name].constructor === Array) {
                     args[name].forEach(this.ensureAttributes.bind(this));
                 }
-                if (args[name].constructor === String && Date.parse(args[name]).constructor === Number) {
+                if (["expirationDate", "date", "issueCardDate"].includes(name) && !(args[name] instanceof Date) &&
+                        !isNaN(Date.parse(args[name]))) {
                     args[name] = new Date(args[name]);
                 }
                 if (name === "expirationDate" && args[name] instanceof Date) {
                     const year = args[name].getFullYear().toString();
                     const month = (args[name].getMonth() + 1).toString(); // getMonth() is zero-based
+                    debug("expiration date", args[name].getFullYear().toString(), (args[name].getMonth() + 1).toString())
                     args[name] = `${(month[1] ? month : `0${month[0]}`)}${year.slice(-2)}`;
                 }
                 if (name === "expirationDate") {
