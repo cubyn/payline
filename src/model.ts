@@ -43,10 +43,10 @@ export interface PaymentData {
 }
 
 export interface Card {
-    number?: string,
+    number: string,
     type?: string,
-    expirationDate?: Date,
-    cvx?: string,
+    expirationDate: Date,
+    cvx: string,
     encryptedData?: string,
     encryptionKeyId?: string,
     ownerBirthdayDate?: string,

@@ -20,6 +20,7 @@ import {
     Wallet,
     SuccessResult,
     WalletResult,
+    Environment,
 } from "./model";
 
 
@@ -36,7 +37,7 @@ class PaylineCore {
     };
 
     constructor(private merchantId: string, private accessKey: string, public contractNumber: string,
-                public enviromnent: Operation,
+                public enviromnent: Environment,
                 public endpointsPrefix: EnvironmentsProperty<string> = DEFAULT_ENDPOINTS_PREFIX,
                 public wsdlsPrefix: EnvironmentsProperty<string> = DEFAULT_WSDLS_PREFIX,
                 public wsdlsName: OperationsProperty<string> = DEFAULT_WSDLS_NAME,) {
@@ -145,9 +146,9 @@ class PaylineCore {
     private async _runAction(client: any, action: string, args: any): Promise<any> {
         args.version = args.version || this.paylineVersion;
         const response = await new Promise<any>((resolve, reject) => {
-            try {
-                client[action](this.ensureAttributes(args), resolve);
-            } catch (error) {
+            try {console.log("working")
+                client[action](this.ensureAttributes(args), resolve);console.log("working done")
+            } catch (error) {console.log("err", error)
                 reject(error);
             }
         });
@@ -169,8 +170,9 @@ class PaylineCore {
     public async runAction(action: string, args: any): Promise<any> {
         await this.initializeAll();
         const client = Object.values(this._soapClient)
-            .find(client => !!client && !!client[action]);
-
+            .find(client => !!client && !!client[action])
+            ;//.pop();
+        console.log("got client", JSON.stringify(client))
         if (!!client) {
             throw new Error("Wrong action for the API");
         }
@@ -195,7 +197,7 @@ export default class Payline extends PaylineCore {
     public defaultMode: MODE = MODE.CPT;
     public defaultReferencePrefix: string = "order_";
 
-    protected generateId(): string {
+    public generateId(): string {
         return `${Math.ceil(Math.random() * 100000)}`;
     }
 

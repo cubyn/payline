@@ -7,7 +7,7 @@
     ],
     "compilerOptions": {
         "noImplicitAny": false,
-        "target": "ES2017",
+        "target": "ES3",
         "types": [
             "node"
         ],
