@@ -145,8 +145,8 @@ export const DEFAULT_ENDPOINTS_PREFIX: EnvironmentsProperty<string> = {
 };
 
 export const DEFAULT_WSDLS_PREFIX: EnvironmentsProperty<string> = {
-    homologation: path.join(__dirname, "wsdl/homologation") + "/",
-    production: path.join(__dirname, "wsdl/production") + "/",
+    homologation: path.join(__dirname, "wsdl/homologation/"),
+    production: path.join(__dirname, "wsdl/production/"),
 };
 
 export const DEFAULT_WSDLS_NAME: OperationsProperty<string> = {

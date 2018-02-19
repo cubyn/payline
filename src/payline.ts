@@ -2,25 +2,25 @@ import * as soap from "soap";
 import * as _debug from "debug";
 import {
     ACTIONS,
-    CURRENCIES,
-    MODE,
-    DEFAULT_ENDPOINTS_PREFIX,
-    DEFAULT_WSDLS_PREFIX,
-    DEFAULT_WSDLS_NAME,
-    MIN_AMOUNT,
     Card,
+    CURRENCIES,
+    DEFAULT_ENDPOINTS_PREFIX,
+    DEFAULT_WSDLS_NAME,
+    DEFAULT_WSDLS_PREFIX,
+    Environment,
     EnvironmentsProperty,
+    MIN_AMOUNT,
+    MODE,
     Operation,
     OperationsProperty,
     Order,
     Owner,
     Payment,
+    SuccessResult,
     TransactionResult,
     ValidationResult,
     Wallet,
-    SuccessResult,
     WalletResult,
-    Environment,
 } from "./model";
 
 
@@ -41,22 +41,55 @@ class PaylineCore {
                 public endpointsPrefix: EnvironmentsProperty<string> = DEFAULT_ENDPOINTS_PREFIX,
                 public wsdlsPrefix: EnvironmentsProperty<string> = DEFAULT_WSDLS_PREFIX,
                 public wsdlsName: OperationsProperty<string> = DEFAULT_WSDLS_NAME,) {
+        debug("Created Payline object");
     }
 
-    protected wsdl(): string {
-        return "";
+    /**
+     * Call any action that is defined in the WSDL files with the arguments
+     * @param {string} action name of the action to call
+     * @param args parameters of the call
+     * @return {<any>} promise of the response from payline
+     */
+    public async runAction(action: string, args: any): Promise<any> {
+        await this.initializeAll();
+        const client = Object.values(this._soapClient)
+            .find(client => !!client && !!client[action]);
+        if (!client) {
+            throw new Error("Wrong action for the API");
+        } else {
+            debug(`Using client with services ` +
+                `${JSON.stringify(Object.keys(client && client.wsdl && client.wsdl.services))} for action ${action}`);
+        }
+
+        try {
+            return this._runAction(client, action, args);
+        } catch (error) {
+            const response = error.response;
+            if (response.statusCode === 401) {
+                return Promise.reject({shortMessage: "Wrong API credentials", paylineError: error});
+            } else {
+                return Promise.reject({shortMessage: "Wrong API call", paylineError: error});
+            }
+        }
     }
 
-    protected soapParams(): {} {
-        return {};
+    protected wsdl(operation: Operation): string {
+        return `${this.wsdlsPrefix[this.enviromnent]}${this.wsdlsName[operation]}`;
+    }
+
+    protected soapParams(operation: Operation): { [key: string]: any } {
+        return {
+            endpoint: `${this.endpointsPrefix[this.enviromnent]}${this.serviceNameFromWsdl(this.wsdlsName[operation])}`
+        };
+    }
+
+    private serviceNameFromWsdl(wsdlName: string) {
+        return wsdlName.substr(0, wsdlName.length - ".wsdl".length);
     }
 
     private async initializeAll(): Promise<void> {
-        Object.keys(this._soapClient).forEach((operation: Operation) => {
-            if (!this._soapClient[operation]) {
-                this.initialize(operation);
-            }
-        });
+        await Promise.all(Object.keys(this._soapClient).map((operation: Operation) =>
+            (!this._soapClient[operation]) ? this.initialize(operation) : Promise.resolve()));
     }
 
     /**
@@ -68,7 +101,8 @@ class PaylineCore {
      * @return {Promise<any>} promise to the soap client
      */
     private async initialize(operation: Operation): Promise<void> {
-        this._soapClient[operation] = await soap.createClientAsync(this.wsdl(), this.soapParams());
+        debug('creating client for', operation, this.wsdl(operation));
+        this._soapClient[operation] = await soap.createClientAsync(this.wsdl(operation), this.soapParams(operation));
         const basicAuthSecurity = new soap.BasicAuthSecurity(this.merchantId, this.accessKey);
 
         this._soapClient[operation].setSecurity(basicAuthSecurity);
@@ -114,80 +148,59 @@ class PaylineCore {
     };
 
     private ensureAttributes(args: any): any {
-        Object.keys(args).forEach(name => {
-            if (args[name].constructor === Object) {
-                args[name].attributes = args[name].attributes || this.namespace(name);
-                args[name] = this.ensureAttributes(args[name]);
-            }
-            if (args[name].constructor === Array) {
-                args[name].forEach(this.ensureAttributes.bind(this));
-            }
-            if (args[name].constructor === String && Date.parse(args[name]).constructor === Number) {
-                args[name] = new Date(args[name]);
-            }
-            if (name === "expirationDate" && args[name] instanceof Date) {
-                const year = args[name].getFullYear().toString();
-                const month = (args[name].getMonth() + 1).toString(); // getMonth() is zero-based
-                args[name] = `${(month[1] ? month : `0${month[0]}`)}${year.slice(-2)}`;
-            }
-            if (name === "expirationDate") {
-                args[name] = args[name].replace("/", ""); // replace 12/07 to 1207
-            }
-            if (args[name] instanceof Date) {
-                args[name] = this.paylineDate(args[name]);
-            }
-            if (name === "amout" && args[name] instanceof Number) {
+        Object.keys(args)
+            .filter(name => name !== "attributes" && args[name])
+            .forEach(name => {
+                if (args[name].constructor === Object) {
+                    args[name].attributes = args[name].attributes || this.namespace(name);
+                    args[name] = this.ensureAttributes(args[name]);
+                }
+                if (args[name].constructor === Array) {
+                    args[name].forEach(this.ensureAttributes.bind(this));
+                }
+                if (args[name].constructor === String && Date.parse(args[name]).constructor === Number) {
+                    args[name] = new Date(args[name]);
+                }
+                if (name === "expirationDate" && args[name] instanceof Date) {
+                    const year = args[name].getFullYear().toString();
+                    const month = (args[name].getMonth() + 1).toString(); // getMonth() is zero-based
+                    args[name] = `${(month[1] ? month : `0${month[0]}`)}${year.slice(-2)}`;
+                }
+                if (name === "expirationDate") {
+                    args[name] = args[name].replace("/", ""); // replace 12/07 to 1207
+                }
+                if (args[name] instanceof Date) {
+                    args[name] = this.paylineDate(args[name]);
+                }
+                if (name === "amout" && args[name] instanceof Number) {
 
-            }
-        });
+                }
+            });
         return args;
     }
 
     private async _runAction(client: any, action: string, args: any): Promise<any> {
         args.version = args.version || this.paylineVersion;
         const response = await new Promise<any>((resolve, reject) => {
-            try {console.log("working")
-                client[action](this.ensureAttributes(args), resolve);console.log("working done")
-            } catch (error) {console.log("err", error)
+            try {
+                const _args: any = this.ensureAttributes(args);
+                debug(`calling ${action} with parameters ${JSON.stringify(_args)}`);
+                client[action](_args, resolve);
+            } catch (error) {
+                console.log("err", error)
                 reject(error);
             }
         });
         const result = this.extractResult(response);
+        debug(`action ${action} got result ${JSON.stringify(result)}`);
 
         if (this.isResultSuccessful(result)) {
-            return { result: result, raw: response };
+            return {result: result, raw: response};
         } else {
-            throw { result: result, raw: response };
+            throw {result: result, raw: response};
         }
     }
 
-    /**
-     * Call any action that is defined in the WSDL files with the arguments
-     * @param {string} action name of the action to call
-     * @param args parameters of the call
-     * @return {<any>} promise of the response from payline
-     */
-    public async runAction(action: string, args: any): Promise<any> {
-        await this.initializeAll();
-        const client = Object.values(this._soapClient)
-            .find(client => !!client && !!client[action])
-            ;//.pop();
-        console.log("got client", JSON.stringify(client))
-        if (!!client) {
-            throw new Error("Wrong action for the API");
-        }
-
-        try {
-            return this._runAction(client, action, args);
-        } catch (error) {
-            const response = error.response;
-            if (response.statusCode === 401) {
-                return Promise.reject({ shortMessage: "Wrong API credentials", paylineError: error });
-            } else {
-                return Promise.reject({ shortMessage: "Wrong API call", paylineError: error });
-            }
-        }
-    }
 
 }
 
@@ -201,38 +214,13 @@ export default class Payline extends PaylineCore {
         return `${Math.ceil(Math.random() * 100000)}`;
     }
 
-    private setOrderDefaults(order: Order, referencePrefix?: string): Order {
-        order.date = order.date || new Date(); // now if date not exist
-        order.ref = order.ref || `${referencePrefix || this.defaultReferencePrefix}${this.generateId()}`;
-        return order;
-    }
-
-    private setPaymentDefaults(payment: Payment, action: ACTIONS, currency?: CURRENCIES): Payment {
-        payment.mode = payment.mode || this.defaultMode;
-        payment.action = action;
-        payment.currency = payment.currency || currency || this.defaultCurrency;
-        payment.contractNumber = this.contractNumber;
-        return payment;
-    }
-
-    private extractTransactionalResult(raw: any): TransactionResult {
-        return { id: raw.transaction && raw.transaction.id, raw, }
-    }
-
-    protected generateWallet(walletId: string, card: Card): Wallet {
-        return {
-            walletId,
-            card,
-        };
-    }
-
     public async createWallet(walletId, card: Card, owner?: Owner): Promise<WalletResult> {
         const raw = await this.runAction("createWallet", {
             contractNumber: this.contractNumber,
             wallet: this.generateWallet(walletId, card),
             owner,
         });
-        return { wallet: raw.wallet, raw, };
+        return {wallet: raw.wallet, raw,};
     }
 
     public async updateWallet(walletId, card: Card, owner?: Owner): Promise<WalletResult> {
@@ -241,7 +229,7 @@ export default class Payline extends PaylineCore {
             wallet: this.generateWallet(walletId, card),
             owner,
         });
-        return { wallet: raw.wallet, raw, };
+        return {wallet: raw.wallet, raw,};
     }
 
     public async getWallet(walletId): Promise<WalletResult> {
@@ -249,7 +237,7 @@ export default class Payline extends PaylineCore {
             contractNumber: this.contractNumber,
             walletId
         });
-        return { wallet: raw.wallet, raw, };
+        return {wallet: raw.wallet, raw,};
     }
 
     public async disableWallet(walletId): Promise<SuccessResult> {
@@ -257,7 +245,7 @@ export default class Payline extends PaylineCore {
             contractNumber: this.contractNumber,
             walletIdList: [walletId],
         });
-        return { success: true, raw };
+        return {success: true, raw};
     }
 
     public async doWalletPayment(walletId, payment: Payment, order: Order,
@@ -272,7 +260,7 @@ export default class Payline extends PaylineCore {
     }
 
     public async scheduleWalletPayment(walletId, payment: Payment, order: Order, scheduledDate: Date,
-                                 referencePrefix?: string, currency?: CURRENCIES): Promise<any> {
+                                       referencePrefix?: string, currency?: CURRENCIES): Promise<any> {
         this.setPaymentDefaults(payment, ACTIONS.PAYMENT, currency);
         this.setOrderDefaults(order, referencePrefix);
         return this.extractTransactionalResult(await this.runAction("doImmediateWalletPayment", {
@@ -284,7 +272,7 @@ export default class Payline extends PaylineCore {
     }
 
     public async doAuthorization(payment: Payment, order: Order, card: Card,
-            referencePrefix?: string, currency?: CURRENCIES): Promise<TransactionResult> {
+                                 referencePrefix?: string, currency?: CURRENCIES): Promise<TransactionResult> {
         this.setPaymentDefaults(payment, ACTIONS.AUTHORIZATION, currency);
         this.setOrderDefaults(order, referencePrefix);
         return this.extractTransactionalResult(await this.runAction("doAuthorization", {
@@ -314,7 +302,7 @@ export default class Payline extends PaylineCore {
     }
 
     public async doReset(transactionID: string,
-            comment: string = "Card validation cleanup"): Promise<TransactionResult> {
+                         comment: string = "Card validation cleanup"): Promise<TransactionResult> {
         return this.extractTransactionalResult(await this.runAction("doReset", {
             transactionID,
             comment,
@@ -329,15 +317,15 @@ export default class Payline extends PaylineCore {
         try {
             authorization = await this.doAuthorization(payment, order, card, referencePrefix, currency);
         } catch {
-            return { success: false, raw: {authorization, reset: null} };
+            return {success: false, raw: {authorization, reset: null}};
         }
 
         const reset = await this.doReset(authorization && authorization.transactionId);
-        return { success: true, raw: {authorization, reset} }
+        return {success: true, raw: {authorization, reset}}
     }
 
     public async doWebPayment(payment: Payment, order: Order, returnURL, cancelURL, buyer: any = {},
-            selectedContractList: any = null, referencePrefix?, currency?): Promise<TransactionResult> {
+                              selectedContractList: any = null, referencePrefix?, currency?): Promise<TransactionResult> {
         this.setPaymentDefaults(payment, ACTIONS.PAYMENT, currency);
         this.setOrderDefaults(order, referencePrefix);
         return this.extractTransactionalResult(await this.runAction("doWebPayment", {
@@ -348,5 +336,30 @@ export default class Payline extends PaylineCore {
             selectedContractList,
             buyer,
         }));
+    }
+
+    protected generateWallet(walletId: string, card: Card): Wallet {
+        return {
+            walletId,
+            card,
+        };
+    }
+
+    private setOrderDefaults(order: Order, referencePrefix?: string): Order {
+        order.date = order.date || new Date(); // now if date not exist
+        order.ref = order.ref || `${referencePrefix || this.defaultReferencePrefix}${this.generateId()}`;
+        return order;
+    }
+
+    private setPaymentDefaults(payment: Payment, action: ACTIONS, currency?: CURRENCIES): Payment {
+        payment.mode = payment.mode || this.defaultMode;
+        payment.action = action;
+        payment.currency = payment.currency || currency || this.defaultCurrency;
+        payment.contractNumber = this.contractNumber;
+        return payment;
+    }
+
+    private extractTransactionalResult(raw: any): TransactionResult {
+        return {id: raw.transaction && raw.transaction.id, raw,}
     }
 }
