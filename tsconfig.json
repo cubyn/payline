@@ -9,7 +9,8 @@
         "noImplicitAny": false,
         "target": "ES3",
         "types": [
-            "node"
+            "node",
+            "jest"
         ],
         "lib": [
             "ES2017"

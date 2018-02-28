@@ -59,18 +59,18 @@ export interface Card {
 
 export interface Payment {
     amount: number,
-    currency: CURRENCIES,
-    action: ACTIONS,
-    mode: MODE,
-    contractNumber: string,
+    currency?: CURRENCIES,
+    action?: ACTIONS,
+    mode?: MODE,
+    contractNumber?: string,
     softDescriptor?: string,
 }
 
 export interface Order {
-    ref: string,
-    amount: number,
-    currency: CURRENCIES,
-    date: Date,
+    ref?: string,
+    amount?: number,
+    currency?: CURRENCIES,
+    date?: Date,
 }
 
 /**
