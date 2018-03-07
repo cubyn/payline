@@ -66,7 +66,7 @@ export class PaylineCore {
 
     protected soapParams(operation: Operation): { [key: string]: any } {
         return {
-            endpoint: `${this.endpointsPrefix[this.enviromnent]}${this.serviceNameFromWsdl(this.wsdlsName[operation])}`
+            endpoint: `${this.endpointsPrefix[this.enviromnent]}${this.serviceNameFromWsdl(this.wsdlsName[operation])}`,
         };
     }
 
@@ -136,6 +136,16 @@ export class PaylineCore {
             `${year} ${(hour[1] ? hour : `0${hour[0]}`)}:${(minute[1] ? minute : `0${minute[0]}`)}`;
     };
 
+    private paylineShortDate(date: Date): String {
+        const year = date.getFullYear().toString();
+        const month = (date.getMonth() + 1).toString(); // getMonth() is zero-based
+        const day = date.getDate().toString();
+        // DD/MM/YYYY
+        return `${(day[1] ? day : `0${day[0]}`)}/` +
+            `${(month[1] ? month : `0${month[0]}`)}/` +
+            `${year}`;
+    }
+
     private ensureAttributes(args: any): any {
         Object.keys(args)
             .filter(name => name !== "attributes" && !!args[name])
@@ -160,6 +170,9 @@ export class PaylineCore {
                 }
                 if (name === "expirationDate") {
                     args[name] = args[name].replace("/", ""); // replace 12/07 to 1207
+                }
+                if (name === "scheduledDate" && args[name] instanceof Date) {
+                    args[name] = this.paylineShortDate(args[name]);
                 }
                 if (args[name] instanceof Date) {
                     args[name] = this.paylineDate(args[name]);

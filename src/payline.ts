@@ -22,6 +22,33 @@ export default class Payline extends PaylineCore {
     public defaultMode: MODE = MODE.CPT;
     public defaultReferencePrefix: string = "order_";
 
+    private setOrderDefaults(order: Order, referencePrefix?: string, currency?: CURRENCIES, amount: number = 0): Order {
+        order.date = order.date || new Date(); // now if date not exist
+        order.ref = order.ref || `${referencePrefix || this.defaultReferencePrefix}${this.generateId()}`;
+        order.currency = order.currency || currency || this.defaultCurrency;
+        order.amount = order.amount || amount;
+        return order;
+    }
+
+    private setPaymentDefaults(payment: Payment, action: ACTIONS, currency?: CURRENCIES): Payment {
+        payment.mode = payment.mode || this.defaultMode;
+        payment.action = action;
+        payment.currency = payment.currency || currency || this.defaultCurrency;
+        payment.contractNumber = this.contractNumber;
+        return payment;
+    }
+
+    private extractTransactionalResult(raw: any): TransactionResult {
+        return {id: raw.transaction && raw.transaction.id, raw,}
+    }
+
+    protected generateWallet(walletId: string, card: Card): Wallet {
+        return {
+            walletId,
+            card,
+        };
+    }
+
     public generateId(): string {
         return `${Math.ceil(Math.random() * 100000)}`;
     }
@@ -60,6 +87,13 @@ export default class Payline extends PaylineCore {
         return {success: true, raw};
     }
 
+    public async transactionDetail(transactionId): Promise<TransactionResult> {
+        const raw = await this.extractTransactionalResult(await this.runAction("getTransactionDetails", {
+            transactionId,
+        }));
+        return raw;
+    }
+
     public async doWalletPayment(walletId, payment: Payment, referencePrefix?: string,
                                  currency?: CURRENCIES, order: Order = {}): Promise<any> {
         this.setPaymentDefaults(payment, ACTIONS.PAYMENT, currency);
@@ -76,12 +110,14 @@ export default class Payline extends PaylineCore {
                                        currency?: CURRENCIES, order: Order = {}): Promise<any> {
         this.setPaymentDefaults(payment, ACTIONS.PAYMENT, currency);
         this.setOrderDefaults(order, referencePrefix, currency, payment.amount);
-        return this.extractTransactionalResult(await this.runAction("doImmediateWalletPayment", {
+        const raw: any =  this.extractTransactionalResult(await this.runAction("doScheduledWalletPayment", {
             payment,
             order,
             walletId,
             scheduledDate,
         }));
+        raw.id = raw.paymentRecordId || null;
+        return raw;
     }
 
     public async doAuthorization(payment: Payment, card: Card, referencePrefix?: string,
@@ -122,6 +158,15 @@ export default class Payline extends PaylineCore {
         }));
     }
 
+    public async doRefund(transactionID: string, payment: Payment,
+                         comment: string = "Transaction refound"): Promise<TransactionResult> {
+        return this.extractTransactionalResult(await this.runAction("doRefund", {
+            transactionID,
+            payment,
+            comment,
+        }));
+    }
+
     public async validateCard(payment: Payment, card: Card, referencePrefix?: string,
                               currency?: CURRENCIES, order: Order = {}): Promise<ValidationResult> {
         // 1 is the minimum here
@@ -133,7 +178,7 @@ export default class Payline extends PaylineCore {
             return {success: false, raw: {authorization, reset: null}};
         }
 
-        const reset = await this.doReset(authorization && authorization.transactionId);
+        const reset = await this.doReset(authorization && authorization.id);
         return {success: true, raw: {authorization, reset}}
     }
 
@@ -151,30 +196,4 @@ export default class Payline extends PaylineCore {
         }));
     }
 
-    protected generateWallet(walletId: string, card: Card): Wallet {
-        return {
-            walletId,
-            card,
-        };
-    }
-
-    private setOrderDefaults(order: Order, referencePrefix?: string, currency?: CURRENCIES, amount: number = 0): Order {
-        order.date = order.date || new Date(); // now if date not exist
-        order.ref = order.ref || `${referencePrefix || this.defaultReferencePrefix}${this.generateId()}`;
-        order.currency = order.currency || currency || this.defaultCurrency;
-        order.amount = order.amount || amount;
-        return order;
-    }
-
-    private setPaymentDefaults(payment: Payment, action: ACTIONS, currency?: CURRENCIES): Payment {
-        payment.mode = payment.mode || this.defaultMode;
-        payment.action = action;
-        payment.currency = payment.currency || currency || this.defaultCurrency;
-        payment.contractNumber = this.contractNumber;
-        return payment;
-    }
-
-    private extractTransactionalResult(raw: any): TransactionResult {
-        return {id: raw.transaction && raw.transaction.id, raw,}
-    }
 }
