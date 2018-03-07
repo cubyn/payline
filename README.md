@@ -1,87 +1,142 @@
-# Payline
-> NodeJS SDK for payline.com API
+# TS-Payline
+> NodeJS/TypeScript SDK for payline.com API
 
-This provides a very succinct SDK for the payline.com API. If you need additional Payline methods covered, feel free to contribute :-)
-Highly inspired from [Django-Payline](https://github.com/magopian/django-payline), thanks!
-
-As promised ([Bluebird](https://github.com/petkaantonov/bluebird) based).
+This provides a very succinct SDK for the payline.com API using TypeScript. It's influenced by [cubyn/payline](cubyn/payline) and
+completely rewritten using TypeScript, ES6 and tested with unit tests.
 
 ## Usage
 
-Where to find those f**** config strings? Well I've been there:
+Where to find the config strings? It's here:
 
-- `userId` is sent by email when you subscribe to Payline. joyfully named _Vendor identifier_ or _Merchant's Login_ elsewhere in their admin
-- `userPass` is called _access key_ and available in Settings > Change your access key
-- `contractNumber` is related to a point of sale and a method of payment. So once you created a _point of sale_, head to _method of payment_ and you will get a contract number after that. In the test mode, '1234567' seems to be accepted by default
+- `merchantId` is sent by email when you subscribe to Payline. joyfully named _Vendor identifier_ or _Merchant's Login_ elsewhere in their admin
+- `accessKey` is called _access key_ and available in Settings > Change your access key
+- `contractId` is related to a point of sale and a method of payment. So once you created a _point of sale_, head to _method of payment_ and you will get a contract number after that. In the test mode, '1234567' seems to be accepted by default
+- `environment` is witch environemnt use ('homologation', 'production'). Homologation is set by default.
 
 ```
-npm install payline
+yarn add tg-payline
 ```
 
 ``` javascript
-var Payline = require('payline');
-var payline = new Payline('<% userId %>', '<% userPass %>', '<% contractNumber %>');
+import {Payline} from "ts-payline"
+const payline = new Payline(merchantId, accessKey, contractId, environment)
 ```
 
 ## Example
 
 ``` javascript
-payline.createWallet('wallet_0001', {
-        number: '4970101122334471',
-        type: 'CB',
-        expirationDate: '0117',
-        cvx: '123'
-    })
-    .then(function() {
-        // issue a 10€ order
-        return payline.makeWalletPayment('wallet_0001', 1000, Payline.CURRENCIES.EUR);
-    })
-    .then(function(result) {
-        console.log("Youpi! Transaction id: " + result.transactionId);
-    }, function(err) {
-        console.log("Wtf happened: " + err.shortMessage + ' - ' + err.longMessage);
-    });
+import {Card, CURRENCIES, Payment} from "ts-payline";
+// parameters to the payment
+const card: Card = {
+    cardholder: "John Doe",
+    number: "4242424242424242", // test valid card
+    expirationDate: new Date(startDate.getTime() + 1000 * 60 * 60 * 24), // experied in 1 day
+    cvx: "123",
+    type: "CB",
+};
+const payment: Payment = {
+    amount: 9743,
+    softDescriptor: "payment test description"
+};
+const walletId: string = "ID_PREFIX_" + payline.generateId();
+// creation of the wallet
+const {wallet, ...walletRest} = await payline.createWallet(walletId, card);
+// change default currency into EUR
+payline.defaultCurrency = CURRENCIES.EUR;
+// issue an order
+const {id, ...paymentRest} = await payline.doWalletPayment(wallet, payment, "payment_name_prefix_");
+console.log(`DONE! Transaction id: ${id}`);
+// get transaction details
+const details = await payline.transactionDetails(id);
 ```
+
+If transaction is not succeed error will be throw, so it's possible to catch it using try/catch.
 
 ## Example using doWebPayment
 
 ``` javascript
-payline.doWebPayment(123, 'A-PAY-TEST', '20/06/2015 20:21', 'http://www.wexample.com', 'http://v2.wexample.com')
-  .then(function (result) {
-    console.log("Youpla! Redirect to: " + result.redirectURL);
-  }, function (err) {
-    console.log("Wtf happened: " + err.shortMessage + ' - ' + err.longMessage);
-  });
+const {url, ...webRest} = await payline.doWebPayment(payment, "https://example.com/success", 
+        "https://example.com/cancel", {}, null, "web_payment_name_");
+console.log(`DONE! Redirect to url: ${url}`);
 ```
+
+## Example of raw payline API call
+
+``` javascript
+// call raw action with parameters into payline
+const raw = await this.runAction("getTransactionDetails", {
+    transactionId,
+});
+console.log(`DONE! Raw response: ${JSON.stringify(raw)}`);
+```
+
+## API examples
+
+You can find examples of the usage in a [test file](https://github.com/tgorka/payline/blob/master/src/payline.spec.ts)
 
 ## API
 
-##### `new Payline(userId, userPass, contractNumber) -> instance`
+##### `new Payline(merchantId, accessKey, contractId, environment="homologation") -> instance`
 > See Usage to find those variables
 
-> You can override the wsdl bundled in this module by setting a 4th arg : `new Payline(userId, userPass, contractNumber, 'my file path or url')`
+##### `instance.createWallet(walletId, card) -> Promise({ wallet })`
+> Create new wallet - needs to generate id first.
 
-##### `instance.createWallet(walletId, card) -> Promise({ walletId })`
-##### `instance.updateWallet(walletId, card) -> Promise({ walletId })`
+##### `instance.updateWallet(walletId, card) -> Promise({ wallet })`
 > Card object: `{ number, type, expirationDate, cvx }`
 
 > Type: One of `CB`, `AMEX`, `VISA` (but abroad France only), `MASTERCARD` (same) - cf page 148 of their doc
 
 ##### `instance.getWallet(walletId) -> Promise(wallet)`
+> Get information for the wallet
 
-##### `instance.makeWalletPayment(walletId, amount, currency = 978) -> Promise({ transactionId })`
+##### `instance.disableWallet(walletId) -> Promise()`
+> Disabling wallet
+
+##### `instance.doWalletPayment(walletId, payment, "optional_text") -> Promise({ id })`
 > Note that amounts are in cents
 
 ##### `instance.validateCard(card, tryAmount = 100, currency = 978) -> Promise(bool)`
 > Will try to issue a 1€ order (that will be cancelled right after the call is verified)
 
-## Contributions
+#### `instance.doAuthorization(payment, card, "authorization_name_") -> Promise({ id })`
+> Authorization hold operations
 
+#### `instance.doReAuthorization(id, "reauthorization_name_") -> Promise({ id })`
+> Renew hold
+
+#### `instance.doCapture(id, payment) -> Promise({ id })`
+> Capture part/full of the hold amount
+
+#### `instance.doRefund(id, payment, "refund_name_") -> Promise({ id })`
+> Refund amount after payment/capture has been done
+
+#### `instance.doReset(id, payment, "reset_name_") -> Promise({ id })`
+> Reset the authorization hold
+
+#### `instance.transactionDetail(id) -> Promise(transaction)`
+> Information about the transaction (payment, authorization, reauthorization, ...)
+
+#### `instance.validateCard(payment, card, "card_validation_name_") -> Promise({ success: boolean})`
+> Check if card is ok for the payment. It's a shortcut for making authorization and reset it after.
+
+#### `instance.scheduleWalletPayment(wallet, payment, scheduleDate, "schedule_payment_name_") -> Promise({ id })`
+> Schedule the payment on the scheduleDate
+
+#### `instance.runAction(actionName, {...actionParameters}) -> Promise(raw)`
+> Raw call into the payline API
+
+## Tests
 
 ```
-npm run watch
-
-# this module is written in ES6 - so it has to be transpiled
-# before being published to NPM. check the package.json prepublish script
-
+yarn test
 ```
+
+## Author
+Tomasz Górka <http://tomasz.gorka.org.pl>
+influenced bu the library [cubyn/payline](cubyn/payline)
+
+## License
+&copy; 2018 Tomasz Górka
+
+MIT licensed.

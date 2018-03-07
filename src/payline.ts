@@ -186,7 +186,7 @@ export default class Payline extends PaylineCore {
                               referencePrefix?, currency?, order: Order = {}): Promise<TransactionResult> {
         this.setPaymentDefaults(payment, ACTIONS.PAYMENT, currency);
         this.setOrderDefaults(order, referencePrefix, currency, payment.amount);
-        return this.extractTransactionalResult(await this.runAction("doWebPayment", {
+        const raw = this.extractTransactionalResult(await this.runAction("doWebPayment", {
             payment,
             returnURL,
             cancelURL,
@@ -194,6 +194,8 @@ export default class Payline extends PaylineCore {
             selectedContractList,
             buyer,
         }));
+        raw.url = raw.raw && raw.raw.returnURL;
+        return raw;
     }
 
 }

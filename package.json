@@ -1,5 +1,5 @@
 {
-    "name": "payline",
+    "name": "ts-payline",
     "version": "1.0.0",
     "description": "NodeJS SDK for payline.com API",
     "main": "index",
