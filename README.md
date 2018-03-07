@@ -99,31 +99,31 @@ You can find examples of the usage in a [test file](https://github.com/tgorka/pa
 ##### `instance.validateCard(card, tryAmount = 100, currency = 978) -> Promise(bool)`
 > Will try to issue a 1€ order (that will be cancelled right after the call is verified)
 
-#### `instance.doAuthorization(payment, card, "authorization_name_") -> Promise({ id })`
+##### `instance.doAuthorization(payment, card, "authorization_name_") -> Promise({ id })`
 > Authorization hold operations
 
-#### `instance.doReAuthorization(id, "reauthorization_name_") -> Promise({ id })`
+##### `instance.doReAuthorization(id, "reauthorization_name_") -> Promise({ id })`
 > Renew hold
 
-#### `instance.doCapture(id, payment) -> Promise({ id })`
+##### `instance.doCapture(id, payment) -> Promise({ id })`
 > Capture part/full of the hold amount
 
-#### `instance.doRefund(id, payment, "refund_name_") -> Promise({ id })`
+##### `instance.doRefund(id, payment, "refund_name_") -> Promise({ id })`
 > Refund amount after payment/capture has been done
 
-#### `instance.doReset(id, payment, "reset_name_") -> Promise({ id })`
+##### `instance.doReset(id, payment, "reset_name_") -> Promise({ id })`
 > Reset the authorization hold
 
-#### `instance.transactionDetail(id) -> Promise(transaction)`
+##### `instance.transactionDetail(id) -> Promise(transaction)`
 > Information about the transaction (payment, authorization, reauthorization, ...)
 
-#### `instance.validateCard(payment, card, "card_validation_name_") -> Promise({ success: boolean})`
+##### `instance.validateCard(payment, card, "card_validation_name_") -> Promise({ success: boolean})`
 > Check if card is ok for the payment. It's a shortcut for making authorization and reset it after.
 
-#### `instance.scheduleWalletPayment(wallet, payment, scheduleDate, "schedule_payment_name_") -> Promise({ id })`
+##### `instance.scheduleWalletPayment(wallet, payment, scheduleDate, "schedule_payment_name_") -> Promise({ id })`
 > Schedule the payment on the scheduleDate
 
-#### `instance.runAction(actionName, {...actionParameters}) -> Promise(raw)`
+##### `instance.runAction(actionName, {...actionParameters}) -> Promise(raw)`
 > Raw call into the payline API
 
 ## Tests
