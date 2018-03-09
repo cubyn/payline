@@ -125,9 +125,37 @@ You can find examples of the usage in a [test file](https://github.com/tgorka/pa
 
 ## Tests
 
+set env variables for the 'homologation' env and run the tests
+
 ```
+export MERCHANT_ID='XXX'
+export ACCESS_KEY='XXX'
+export CONTRACT_ID='01234567'
 yarn test
 ```
+
+## Serverless
+
+There is prepared configuration with use of [serverless framework](https://serverless.com/). 
+Tested serverless provider is `aws`, but it should work in any others.
+
+#### direct deployment
+To deploy after login into the serverless and set aws credentials:
+
+```
+yarn deploy
+```
+
+#### CodeBuild deployment
+There is basic preconfigured template for `AWS CodeBuild` deploymenet: `buildspec.yml`.
+
+#### Customization
+Clone this repository and update your custom configuration.
+
+#### Default configurations
+Default configuration values are stored in `environemtn/master.yml`
+You can change it after cloning the repository as well as creating file for each
+git branch for keeping track of the credential in different environments.
 
 ## Author
 Tomasz Górka <http://tomasz.gorka.org.pl>
