@@ -176,7 +176,8 @@ It could be also changed when the parameters are set in the event as a key:
 
 ## Author
 Tomasz Górka <http://tomasz.gorka.org.pl>
-influenced bu the library [cubyn/payline](cubyn/payline)
+
+influenced by the library [cubyn/payline](cubyn/payline)
 
 ## License
 &copy; 2018 Tomasz Górka
