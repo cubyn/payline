@@ -1,0 +1,15 @@
+version: 0.2
+
+phases:
+    install:
+        commands:
+            - yarn --prod
+    pre_build:
+        commands:
+            - echo 'no pre-build set'
+    build:
+        commands:
+            - echo 'no build set'
+    post_build:
+        commands:
+            - yarn run deploy
