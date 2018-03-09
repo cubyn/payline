@@ -9,11 +9,12 @@ import {
     Owner,
     Payment,
     SuccessResult,
-    TransactionResult,
+    TransactionResult, UrlResult,
     ValidationResult,
     Wallet,
     WalletResult,
 } from "./model";
+import {debug} from "util";
 
 
 export default class Payline extends PaylineCore {
@@ -183,19 +184,18 @@ export default class Payline extends PaylineCore {
     }
 
     public async doWebPayment(payment: Payment, returnURL, cancelURL, buyer: any = {}, selectedContractList: any = null,
-                              referencePrefix?, currency?, order: Order = {}): Promise<TransactionResult> {
+                              referencePrefix?, currency?, order: Order = {}): Promise<UrlResult> {
         this.setPaymentDefaults(payment, ACTIONS.PAYMENT, currency);
         this.setOrderDefaults(order, referencePrefix, currency, payment.amount);
-        const raw = this.extractTransactionalResult(await this.runAction("doWebPayment", {
+        const raw = await this.runAction("doWebPayment", {
             payment,
             returnURL,
             cancelURL,
             order,
             selectedContractList,
             buyer,
-        }));
-        raw.url = raw.raw && raw.raw.returnURL;
-        return raw;
+        });
+        return {url: raw.redirectURL, raw };
     }
 
 }

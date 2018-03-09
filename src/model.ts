@@ -124,6 +124,10 @@ export interface TransactionResult extends RawResult {
     id: string;
 }
 
+export interface UrlResult extends RawResult {
+    url: string;
+}
+
 export interface SuccessResult extends RawResult {
     success: boolean;
 }
