@@ -1,0 +1,44 @@
+service: payline
+
+plugins:
+    - serverless-offline
+    - serverless-plugin-typescript
+
+
+provider:
+    name: ${opt:provider, 'aws'}
+    runtime: ${opt:runtime, 'nodejs6.10'}
+    stage: ${env:OLD_CODEBUILD_SOURCE_VERSION, 'master'} # Set the default stage used. Default is dev
+    region: ${opt:region, 'eu-west-3'} # Overwrite the default region used. Default is us-east-1
+
+functions:
+    createWallet:
+        handler: handler.createWallet
+    getWallet:
+        handler: handler.getWallet
+    updateWallet:
+        handler: handler.updateWallet
+    disableWallet:
+        handler: handler.disableWallet
+    doWebPayment:
+        handler: handler.doWebPayment
+    doCapture:
+        handler: handler.doCapture
+    doRefund:
+        handler: handler.doRefund
+    scheduleWalletPayment:
+        handler: handler.scheduleWalletPayment
+    validateCard:
+        handler: handler.validateCard
+    doReset:
+        handler: handler.doReset
+    doAuthorization:
+        handler: handler.doAuthorization
+    doReAuthorization:
+        handler: handler.doReAuthorization
+    doWalletPayment:
+        handler: handler.doWalletPayment
+    transactionDetail:
+        handler: handler.transactionDetail
+    runAction:
+        handler: handler.runAction

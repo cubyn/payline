@@ -96,9 +96,6 @@ You can find examples of the usage in a [test file](https://github.com/tgorka/pa
 ##### `instance.doWalletPayment(walletId, payment, "optional_text") -> Promise({ id })`
 > Note that amounts are in cents
 
-##### `instance.validateCard(card, tryAmount = 100, currency = 978) -> Promise(bool)`
-> Will try to issue a 1€ order (that will be cancelled right after the call is verified)
-
 ##### `instance.doAuthorization(payment, card, "authorization_name_") -> Promise({ id })`
 > Authorization hold operations
 
