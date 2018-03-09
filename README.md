@@ -151,11 +151,28 @@ There is basic preconfigured template for `AWS CodeBuild` deploymenet: `buildspe
 
 #### Customization
 Clone this repository and update your custom configuration.
+```
+git clone https://github.com/tgorka/payline.git
+```
 
 #### Default configurations
 Default configuration values are stored in `environemtn/master.yml`
 You can change it after cloning the repository as well as creating file for each
 git branch for keeping track of the credential in different environments.
+
+### Usage
+
+Serverless by default expose just functions without http bindings. 
+All the mentions methods from the Payline object are avalible as a serverless function
+with the parameters of the same name as a keys in the serverless event.
+
+The Payline constructor parameters are taken from the configuration.
+It could be also changed when the parameters are set in the event as a key:
+- merchantId
+- accessKey
+- contractId
+- environment
+- currency 
 
 ## Author
 Tomasz Górka <http://tomasz.gorka.org.pl>
