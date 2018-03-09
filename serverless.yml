@@ -4,12 +4,16 @@ plugins:
     - serverless-offline
     - serverless-plugin-typescript
 
+custom:
+  envStage: ${env:BRANCH, 'master'}
+  stage: ${opt:stage, self:custom.envStage}
 
 provider:
-    name: ${opt:provider, 'aws'}
-    runtime: ${opt:runtime, 'nodejs6.10'}
-    stage: ${env:OLD_CODEBUILD_SOURCE_VERSION, 'master'} # Set the default stage used. Default is dev
-    region: ${opt:region, 'eu-west-3'} # Overwrite the default region used. Default is us-east-1
+  name: ${opt:provider, 'aws'}
+  runtime: ${opt:runtime, 'nodejs6.10'}
+  stage: ${self:custom.stage} # Set the default stage used. Default is dev
+  region: ${opt:region, 'eu-west-3'} # Overwrite the default region used. Default is us-east-1
+  environment: ${file(./environment/${self:custom.stage}.yml)} # default env variables from the files per stage
 
 functions:
     createWallet:

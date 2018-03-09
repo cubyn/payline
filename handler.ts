@@ -6,7 +6,7 @@ import {CURRENCIES, Environment} from "./src/model";
 // config
 const merchantId: string = process.env.MERCHANT_ID || "XXX";
 const accessKey: string = process.env.ACCESS_KEY ||"XXX";
-const contractId: string = process.env.MERCHANT_ID || "1234567";
+const contractId: string = process.env.CONTRACT_ID || "1234567";
 const environment: Environment = (process.env.ENVIRONMENT || "") === Environment.production ?
     Environment.production : Environment.homologation;
 const currency: CURRENCIES = CURRENCIES[process.env.CURRENCY || ""] || CURRENCIES.USD;
