@@ -4,6 +4,8 @@ phases:
     install:
         commands:
             - yarn --prod
+            - yarn add serverless-plugin-typescript
+            - yarn add serverless-offline
     pre_build:
         commands:
             - echo 'no pre-build set'
