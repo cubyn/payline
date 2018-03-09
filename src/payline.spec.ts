@@ -8,7 +8,7 @@ const debug = _debug("payline-test");
 
 const merchantId: string = process.env.MERCHANT_ID || "XXX";
 const accessKey: string = process.env.ACCESS_KEY || "XXX";
-const contractId: string = process.env.MERCHANT_ID || "01234567";
+const contractId: string = process.env.CONTRACT_ID || "01234567";
 const environment: Environment = Environment.homologation;
 
 const startDate: Date = new Date();
