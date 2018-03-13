@@ -14,5 +14,5 @@ phases:
             - echo 'no build set'
     post_build:
         commands:
-            - echo 'deployment for the stage $(git rev-parse --abbrev-ref HEAD)'
-            - yarn deploy --stage=$(git rev-parse --abbrev-ref HEAD)
+            - echo 'deployment for the stage $(git branch -vv | grep \* | cut -d ' ' -f6 | grep -oP '^\[origin\/\K[^]]*')'
+            - yarn deploy --stage=$(git branch -vv | grep \* | cut -d ' ' -f6 | grep -oP '^\[origin\/\K[^]]*')
