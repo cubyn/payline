@@ -16,7 +16,7 @@ provider:
     memorySize: 128 # Overwrite the default memory size. Default is 1024
     timeout: 10 # The default is 6 seconds. Note: API Gateway current maximum is 30 seconds
     logRetentionInDays: 32 # Set the default RetentionInDays for a CloudWatch LogGroup
-    versionFunctions: true # Optional function versioning
+    versionFunctions: false # Optional function versioning
     environment: ${file(./environment/${self:custom.stage}.yml)} # default env variables from the files per stage
 
 package: # Optional deployment packaging configuration
