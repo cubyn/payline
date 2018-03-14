@@ -7,7 +7,8 @@ plugins:
 custom:
     envStage: ${env:BRANCH, 'master'}
     stage: ${opt:stage, self:custom.envStage}
-    configurationName: ${env:CONFIGURATION, self:custom:stage}
+    envConfiguration: ${env:CONFIGURATION, self:custom.stage}
+    configuration: ${opt:configuration, self:custom.envConfiguration}
 
 provider:
     name: 'aws'
@@ -17,8 +18,8 @@ provider:
     memorySize: 128 # Overwrite the default memory size. Default is 1024
     timeout: 10 # The default is 6 seconds. Note: API Gateway current maximum is 30 seconds
     logRetentionInDays: 30 # Set the default RetentionInDays for a CloudWatch LogGroup
-    versionFunctions: false # Optional function versioning
-    environment: ${file(./environment/${self:custom.configurationName}.yml)} # default env variables from the files per stage
+    versionFunctions: true # Optional function versioning
+    environment: ${file(./environment/${self:custom.configuration}.yml)} # default env variables from the files per stage
 
 package: # Optional deployment packaging configuration
     include: # Specify the directories and files which should be included in the deployment package
@@ -27,7 +28,7 @@ package: # Optional deployment packaging configuration
     exclude: # Specify the directories and files which should be excluded in the deployment package
         - .git/**
         - .idea/**
-    excludeDevDependencies: false # Config if Serverless should automatically exclude dev dependencies in the deployment package. Defaults to true
+    excludeDevDependencies: true # Config if Serverless should automatically exclude dev dependencies in the deployment package. Defaults to true
 
 functions:
     createWallet:
