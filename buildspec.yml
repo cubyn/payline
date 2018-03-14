@@ -14,4 +14,4 @@ phases:
             - echo 'no build set'
     post_build:
         commands:
-            - yarn deploy
+            - yarn deploy --verbose
