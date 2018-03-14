@@ -27,7 +27,7 @@ package: # Optional deployment packaging configuration
     exclude: # Specify the directories and files which should be excluded in the deployment package
         - .git/**
         - .idea/**
-    excludeDevDependencies: false # Config if Serverless should automatically exclude dev dependencies in the deployment package. Defaults to true
+    excludeDevDependencies: true # Config if Serverless should automatically exclude dev dependencies in the deployment package. Defaults to true
 
 functions:
     createWallet:
