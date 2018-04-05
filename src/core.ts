@@ -46,7 +46,8 @@ export class PaylineCore {
             throw new Error("Wrong action for the API");
         } else {
             debug(`Using client with services ` +
-                `${JSON.stringify(Object.keys(client && client.wsdl && client.wsdl.services))} for action ${action}`);
+                `${JSON.stringify(Object.keys(client && client.wsdl && client.wsdl.services))} ` +
+                `for action ${action}}`);
         }
 
         try {
@@ -89,7 +90,7 @@ export class PaylineCore {
      * @return {Promise<any>} promise to the soap client
      */
     private async initialize(operation: Operation): Promise<void> {
-        debug("creating client for", operation, this.wsdl(operation));
+        debug("creating client for", operation, this.wsdl(operation), this.soapParams(operation));
         this._soapClient[operation] = await soap.createClientAsync(this.wsdl(operation), this.soapParams(operation));
         const basicAuthSecurity = new soap.BasicAuthSecurity(this.merchantId, this.accessKey);
 
