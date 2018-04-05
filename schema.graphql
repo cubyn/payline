@@ -1,12 +1,12 @@
 type Query {
     # Get information for the wallet
-    getWallet(merchantId: string!, accessKey: string!, contractId: string!, environment: string!,
+    getWallet(merchantId: String!, accessKey: String!, contractId: String!, environment: String!,
         walletId: String!): WalletOutput!
 }
 
 type Mutation {
     # Create new wallet - needs to generate id first.
-    createWallet(merchantId: string!, accessKey: string!, contractId: string!, environment: string!,
+    createWallet(merchantId: String!, accessKey: String!, contractId: String!, environment: String!,
         walletId: String!, card: CardInput!): WalletOutput!
 }
 
