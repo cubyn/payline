@@ -1,8 +1,5 @@
 {
     "version": "2017-02-28",
     "operation": "Invoke",
-    "payload": {
-        "arguments":  $utils.toJson($context.arguments),
-        "identity" : $utils.toJson($context.identity)
-    }
+    "payload": $utils.toJson($context.arguments)
 }
