@@ -39,7 +39,8 @@ export class PaylineCore {
      */
     public async runAction(action: string, args: any): Promise<any> {
         await this.initializeAll();
-        const client = Object.values(this._soapClient)
+        const client = Object.keys(this._soapClient)
+            .map(clientName => this._soapClient[clientName])
             .find(client => !!client && !!client[this.actionMethodName(action)]);
         if (!client) {
             throw new Error("Wrong action for the API");
