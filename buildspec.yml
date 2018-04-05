@@ -1,17 +1,17 @@
 version: 0.2
 
 phases:
-    install:
-        commands:
-            - yarn --prod
-            - yarn add serverless-plugin-typescript
-            - yarn add serverless-offline
-    pre_build:
-        commands:
-            - yarn test
-    build:
-        commands:
-            - echo 'no build set'
-    post_build:
-        commands:
-            - yarn deploy --verbose
+  install:
+    commands:
+      - yarn --prod
+      - yarn add serverless-plugin-typescript
+      - yarn add serverless-offline
+  pre_build:
+    commands:
+      - yarn test
+  build:
+    commands:
+      - echo 'no build set'
+  post_build:
+    commands:
+      - yarn deploy --verbose

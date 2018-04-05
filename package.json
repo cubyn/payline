@@ -7,7 +7,10 @@
         "test": "jest",
         "serverless_win_fix": "ln -s node_modules .build/node_modules && ln -s package.json .build/package.json",
         "offline": "serverless offline --skipCacheInvalidation start",
-        "deploy": "serverless deploy"
+        "deploy-appsync": "serverless deploy-appsync",
+        "update-appsync": "serverless update-appsync",
+        "delete-appsync": "serverless delete-appsync",
+        "deploy": "serverless deploy && npm run update-appsync"
     },
     "jest": {
         "transform": {
@@ -44,6 +47,7 @@
         "@types/node": "^9.4.0",
         "jest": "^22.4.0",
         "serverless": "^1.26.1",
+        "serverless-appsync-plugin": "^0.0.7",
         "serverless-offline": "^3.18.0",
         "serverless-plugin-typescript": "^1.1.5",
         "ts-jest": "^22.0.4",

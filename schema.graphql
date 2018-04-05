@@ -1,0 +1,16 @@
+type Mutation {
+    # Create new wallet - needs to generate id first.
+    createWallet(walletId: String!, card: CardInput!): WalletOutput!
+}
+
+input CardInput {
+    number: String!
+}
+
+type WalletOutput {
+    walletId: String!
+}
+
+schema {
+    mutation: Mutation
+}

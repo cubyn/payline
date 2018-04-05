@@ -1,63 +1,111 @@
 service: payline
 
 plugins:
-    - serverless-offline
-    - serverless-plugin-typescript
+  - serverless-offline
+  - serverless-plugin-typescript
+  - serverless-appsync-plugin
 
 custom:
-    envStage: ${env:BRANCH, 'master'}
-    stage: ${opt:stage, self:custom.envStage}
-    envConfiguration: ${env:CONFIGURATION, self:custom.stage}
-    configuration: ${opt:configuration, self:custom.envConfiguration}
+  envStage: ${env:BRANCH, 'master'}
+  stage: ${opt:stage, self:custom.envStage}
+  envConfiguration: ${env:CONFIGURATION, self:custom.stage}
+  configuration: ${opt:configuration, self:custom.envConfiguration}
+  accountId: ${opt:accountId, env:AWS_ACCOUNT_ID} # replace this with your accountId
+  appSync:
+    name: payline
+    apiId: ${opt:appsyncId, env:AWS_APPSYNC_ID} # only required for update-appsync
+    authenticationType: AWS_IAM # AWS_IAM, AMAZON_COGNITO_USER_POOLS, API_KEY is supported
+    mappingTemplates:
+    - dataSource: createWallet
+      type: Mutation
+      field: createWallet
+      request: "createWallet-request.txt"
+      response: "_generic-result-response.txt"
+    # schema: # defaults schema.graphql
+    serviceRole: "payline-${self:custom.stage}-service-role"
+    dataSources:
+    - type: AWS_LAMBDA
+      name: createWallet
+      description: 'createWallet DataSource'
+      config:
+        lambdaFunctionArn: "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-createWallet"
+        serviceRoleArn: "arn:aws:iam::${self:custom.accountId}:role/${self:custom.appSync.serviceRole}"
 
 provider:
-    name: 'aws'
-    runtime: 'nodejs6.10'
-    stage: ${self:custom.stage} # Set the default stage used. Default is dev
-    region: ${opt:region, 'eu-west-3'} # Overwrite the default region used. Default is us-east-1
-    memorySize: 128 # Overwrite the default memory size. Default is 1024
-    timeout: 10 # The default is 6 seconds. Note: API Gateway current maximum is 30 seconds
-    logRetentionInDays: 30 # Set the default RetentionInDays for a CloudWatch LogGroup
-    versionFunctions: true # Optional function versioning
-    environment: ${file(./environment/${self:custom.configuration}.yml)} # default env variables from the files per stage
+  name: 'aws'
+  runtime: 'nodejs6.10'
+  stage: ${self:custom.stage} # Set the default stage used. Default is dev
+  region: ${opt:region, 'eu-west-1'} # Overwrite the default region used. Default is us-east-1
+  memorySize: 128 # Overwrite the default memory size. Default is 1024
+  timeout: 10 # The default is 6 seconds. Note: API Gateway current maximum is 30 seconds
+  logRetentionInDays: 30 # Set the default RetentionInDays for a CloudWatch LogGroup
+  versionFunctions: true # Optional function versioning
+  environment: ${file(./environment/${self:custom.configuration}.yml)} # default env variables from the files per stage
 
 package: # Optional deployment packaging configuration
-    include: # Specify the directories and files which should be included in the deployment package
-        - src/**
-        - handler.ts
-    exclude: # Specify the directories and files which should be excluded in the deployment package
-        - .git/**
-        - .idea/**
-    excludeDevDependencies: true # Config if Serverless should automatically exclude dev dependencies in the deployment package. Defaults to true
+  include: # Specify the directories and files which should be included in the deployment package
+  - src/**
+  - handler.ts
+  exclude: # Specify the directories and files which should be excluded in the deployment package
+  - .git/**
+  - .idea/**
+  excludeDevDependencies: true # Config if Serverless should automatically exclude dev dependencies in the deployment package. Defaults to true
 
 functions:
-    createWallet:
-        handler: handler.createWallet
-    getWallet:
-        handler: handler.getWallet
-    updateWallet:
-        handler: handler.updateWallet
-    disableWallet:
-        handler: handler.disableWallet
-    doWebPayment:
-        handler: handler.doWebPayment
-    doCapture:
-        handler: handler.doCapture
-    doRefund:
-        handler: handler.doRefund
-    scheduleWalletPayment:
-        handler: handler.scheduleWalletPayment
-    validateCard:
-        handler: handler.validateCard
-    doReset:
-        handler: handler.doReset
-    doAuthorization:
-        handler: handler.doAuthorization
-    doReAuthorization:
-        handler: handler.doReAuthorization
-    doWalletPayment:
-        handler: handler.doWalletPayment
-    transactionDetail:
-        handler: handler.transactionDetail
-    runAction:
-        handler: handler.runAction
+  createWallet:
+    handler: handler.createWallet
+  getWallet:
+    handler: handler.getWallet
+  updateWallet:
+    handler: handler.updateWallet
+  disableWallet:
+    handler: handler.disableWallet
+  doWebPayment:
+    handler: handler.doWebPayment
+  doCapture:
+    handler: handler.doCapture
+  doRefund:
+    handler: handler.doRefund
+  scheduleWalletPayment:
+    handler: handler.scheduleWalletPayment
+  validateCard:
+    handler: handler.validateCard
+  doReset:
+    handler: handler.doReset
+  doAuthorization:
+    handler: handler.doAuthorization
+  doReAuthorization:
+    handler: handler.doReAuthorization
+  doWalletPayment:
+    handler: handler.doWalletPayment
+  transactionDetail:
+    handler: handler.transactionDetail
+  runAction:
+    handler: handler.runAction
+
+resources:
+  Resources:
+    AnanasServiceRole:
+      Type: "AWS::IAM::Role"
+      Properties:
+      RoleName: "payline-${self:custom.stage}-service-role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: "Allow"
+          Principal:
+          Service:
+            - "appsync.amazonaws.com"
+          Action:
+          - "sts:AssumeRole"
+      Policies:
+      - PolicyName: "payline-${self:custom.stage}-policy"
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          - Effect: "Allow"
+            Action:
+            - "lambda:invokeFunction"
+            Resource:
+            - "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-createWallet"
+            - "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-createWallet:*"
