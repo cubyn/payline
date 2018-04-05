@@ -1,3 +1,7 @@
+type Query {
+    getWallet(walletId: String!): WalletOutput!
+}
+
 type Mutation {
     # Create new wallet - needs to generate id first.
     createWallet(walletId: String!, card: CardInput!): WalletOutput!
@@ -12,5 +16,6 @@ type WalletOutput {
 }
 
 schema {
+    query: Query
     mutation: Mutation
 }
