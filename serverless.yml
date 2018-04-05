@@ -12,7 +12,7 @@ custom:
   configuration: ${opt:configuration, self:custom.envConfiguration}
   accountId: ${opt:accountId, env:AWS_ACCOUNT_ID} # replace this with your accountId
   appSync:
-    name: payline
+    name: payline-${self:custom.stage}
     apiId: ${opt:appsyncId, env:AWS_APPSYNC_ID} # only required for update-appsync
     authenticationType: AWS_IAM # AWS_IAM, AMAZON_COGNITO_USER_POOLS, API_KEY is supported
     mappingTemplates:
@@ -85,7 +85,7 @@ functions:
 
 resources:
   Resources:
-    AnanasServiceRole:
+    PaylineServiceRole:
       Type: "AWS::IAM::Role"
       Properties:
       RoleName: "payline-${self:custom.stage}-service-role"
