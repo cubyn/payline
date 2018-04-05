@@ -85,7 +85,7 @@ functions:
 
 resources:
   Resources:
-    PaylineServiceRole:
+    "payline-${self:custom.stage}-service-role":
       Type: "AWS::IAM::Role"
       Properties:
         RoleName: "payline-${self:custom.stage}-service-role"
