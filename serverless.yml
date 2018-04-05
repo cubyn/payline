@@ -88,24 +88,24 @@ resources:
     PaylineServiceRole:
       Type: "AWS::IAM::Role"
       Properties:
-      RoleName: "payline-${self:custom.stage}-service-role"
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-        - Effect: "Allow"
-          Principal:
-          Service:
-            - "appsync.amazonaws.com"
-          Action:
-          - "sts:AssumeRole"
-      Policies:
-      - PolicyName: "payline-${self:custom.stage}-policy"
-        PolicyDocument:
+        RoleName: "payline-${self:custom.stage}-service-role"
+        AssumeRolePolicyDocument:
           Version: "2012-10-17"
           Statement:
           - Effect: "Allow"
+            Principal:
+            Service:
+            - "appsync.amazonaws.com"
             Action:
-            - "lambda:invokeFunction"
-            Resource:
-            - "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-createWallet"
-            - "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-createWallet:*"
+            - "sts:AssumeRole"
+        Policies:
+        - PolicyName: "payline-${self:custom.stage}-policy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+            - Effect: "Allow"
+              Action:
+              - "lambda:invokeFunction"
+              Resource:
+              - "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-createWallet"
+              - "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-createWallet:*"
