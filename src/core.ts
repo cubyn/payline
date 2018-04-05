@@ -95,10 +95,10 @@ export class PaylineCore {
 
         this._soapClient[operation].setSecurity(basicAuthSecurity);
         this._soapClient[operation].on("request", (xml: string): void => {
-            debug("REQUEST", xml);
+            debug(`REQUEST: ${xml}`);
         });
         this._soapClient[operation].on("response", (xml: string): void => {
-            debug("RESPONSE", xml);
+            debug(`RESPONSE: ${xml}`);
         });
     }
 
