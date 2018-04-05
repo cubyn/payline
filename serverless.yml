@@ -22,7 +22,7 @@ custom:
         request: "createWallet-request.txt"
         response: "_generic-result-response.txt"
     # schema: # defaults schema.graphql
-    serviceRole: "payline-service-role"
+    serviceRole: "paylineServiceRole"
     dataSources:
       - type: AWS_LAMBDA
         name: createWallet
@@ -85,10 +85,10 @@ functions:
 
 resources:
   Resources:
-    "payline-service-role":
+    paylineServiceRole:
       Type: "AWS::IAM::Role"
       Properties:
-        RoleName: "payline-service-role"
+        RoleName: "paylineServiceRole"
         AssumeRolePolicyDocument:
           Version: "2012-10-17"
           Statement:
@@ -99,7 +99,7 @@ resources:
               Action:
                 - "sts:AssumeRole"
         Policies:
-          - PolicyName: "payline-policy"
+          - PolicyName: "paylinePolicy"
             PolicyDocument:
               Version: "2012-10-17"
               Statement:
