@@ -12,6 +12,9 @@ type Mutation {
 
 input CardInput {
     number: String!
+    cvx: String!
+    cardholder: String!
+    expirationDate: String!
 }
 
 type WalletOutput {
