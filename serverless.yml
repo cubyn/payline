@@ -22,7 +22,7 @@ custom:
         request: "createWallet-request.txt"
         response: "_generic-result-response.txt"
     # schema: # defaults schema.graphql
-    serviceRole: "payline-${self:custom.stage}-service-role"
+    serviceRole: "payline-service-role"
     dataSources:
       - type: AWS_LAMBDA
         name: createWallet
@@ -85,10 +85,10 @@ functions:
 
 resources:
   Resources:
-    "payline-${self:custom.stage}-service-role":
+    "payline-service-role":
       Type: "AWS::IAM::Role"
       Properties:
-        RoleName: "payline-${self:custom.stage}-service-role"
+        RoleName: "payline-service-role"
         AssumeRolePolicyDocument:
           Version: "2012-10-17"
           Statement:
@@ -99,7 +99,7 @@ resources:
               Action:
                 - "sts:AssumeRole"
         Policies:
-          - PolicyName: "payline-${self:custom.stage}-policy"
+          - PolicyName: "payline-policy"
             PolicyDocument:
               Version: "2012-10-17"
               Statement:
@@ -107,5 +107,7 @@ resources:
                   Action:
                     - "lambda:invokeFunction"
                   Resource:
-                    - "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-createWallet"
-                    - "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-createWallet:*"
+                    - "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-master-createWallet"
+                    - "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-master-createWallet:*"
+                    - "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-prod-createWallet"
+                    - "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-prod-createWallet:*"
