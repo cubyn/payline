@@ -15,6 +15,7 @@ input CardInput {
     cvx: String!
     cardholder: String!
     expirationDate: String!
+    type: String!
 }
 
 type WalletOutput {
