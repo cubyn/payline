@@ -19,7 +19,7 @@ input CardInput {
 }
 
 type WalletOutput {
-    walletId: String!
+    wallet: String!
 }
 
 schema {
