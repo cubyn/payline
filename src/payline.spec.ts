@@ -104,7 +104,7 @@ describe("PAYMENT operations", () => {
         const raw = await payline.doPayment(payment, card, "test_payment_name_");
         debug(`Do payment response ${JSON.stringify(raw.raw)}`);
         //expect(raw.success).toBe(true);
-        expect(raw.raw.result && raw.raw.result.code).toBe("00000");
+        expect(raw.raw.capture && raw.raw.capture.result && raw.raw.capture.result.code).toBe("00000");
         expect(raw.id).not.toBeUndefined();
     });
 
