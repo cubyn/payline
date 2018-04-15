@@ -1,20 +1,27 @@
 type Query {
     # Get information for the wallet
-    getWallet(merchantId: String!, accessKey: String!, contractId: String!, environment: String!,
+    getWallet(merchantId: String, accessKey: String, contractId: String, environment: String,
         walletId: String!): WalletOutput!
-    transactionDetail(transactionId: String!): TransactionDetailOutput!
+    transactionDetail(merchantId: String, accessKey: String, contractId: String, environment: String,
+        transactionId: String!): TransactionDetailOutput!
 }
 
 type Mutation {
     # Create new wallet - needs to generate id first.
-    createWallet(merchantId: String!, accessKey: String!, contractId: String!, environment: String!,
+    createWallet(merchantId: String, accessKey: String, contractId: String, environment: String,
         walletId: String!, card: CardInput!): WalletOutput!
-    doAuthorization(payment: PaymentInput!, card: CardInput!, referencePrefix: String): TransactionOutput!
-    doReAuthorization(transactionId: String!, payment: PaymentInput!, referencePrefix: String): TransactionOutput!
-    doCapture(transactionId: String!, payment: PaymentInput!): TransactionOutput!
-    doReset(transactionId: String!, comment: String): TransactionOutput!
-    doRefund(transactionId: String!, payment: PaymentInput!, comment: String): TransactionOutput!
-    doPayment(transactionId: String!, payment: PaymentInput!, comment: String): TransactionOutput!
+    doAuthorization(merchantId: String, accessKey: String, contractId: String, environment: String,
+        payment: PaymentInput!, card: CardInput!, referencePrefix: String): TransactionOutput!
+    doReAuthorization(merchantId: String, accessKey: String, contractId: String, environment: String,
+        transactionId: String!, payment: PaymentInput!, referencePrefix: String): TransactionOutput!
+    doCapture(merchantId: String, accessKey: String, contractId: String, environment: String,
+        transactionId: String!, payment: PaymentInput!): TransactionOutput!
+    doReset(merchantId: String, accessKey: String, contractId: String, environment: String,
+        transactionId: String!, comment: String): TransactionOutput!
+    doRefund(merchantId: String, accessKey: String, contractId: String, environment: String,
+        transactionId: String!, payment: PaymentInput!, comment: String): TransactionOutput!
+    doPayment(merchantId: String, accessKey: String, contractId: String, environment: String,
+        transactionId: String!, payment: PaymentInput!, comment: String): TransactionOutput!
 }
 
 input CardInput {
@@ -22,7 +29,7 @@ input CardInput {
     cvx: String!
     cardholder: String!
     expirationDate: String!
-    type: String!
+    type: String
 }
 
 input PaymentInput {
