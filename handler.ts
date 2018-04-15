@@ -76,12 +76,17 @@ export const doAuthorization = async (event, context, callback) => {
 };
 
 export const doReAuthorization = async (event, context, callback) => {
-    result(callback, await payline(event).doReAuthorization(event.transactionID, event.payment, event.card,
+    result(callback, await payline(event).doReAuthorization(event.transactionID, event.payment,
         event.referencePrefix, event.currency, event.order));
 };
 
 export const doWalletPayment = async (event, context, callback) => {
     result(callback, await payline(event).doWalletPayment(event.walletId, event.payment,
+        event.referencePrefix, event.currency, event.order));
+};
+
+export const doPayment = async (event, context, callback) => {
+    result(callback, await payline(event).doPayment(event.payment, event.card,
         event.referencePrefix, event.currency, event.order));
 };
 

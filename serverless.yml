@@ -16,19 +16,107 @@ custom:
     apiId: ${opt:appsyncId, env:AWS_APPSYNC_ID} # only required for update-appsync
     authenticationType: AWS_IAM # AWS_IAM, AMAZON_COGNITO_USER_POOLS, API_KEY is supported
     mappingTemplates:
+      - dataSource: getWallet
+        type: Query
+        field: getWallet
+        request: "_generic-request.txt"
+        response: "_generic-response.txt"
+      - dataSource: transactionDetail
+        type: Query
+        field: transactionDetail
+        request: "_generic-request.txt"
+        response: "_generic-response.txt"
       - dataSource: createWallet
         type: Mutation
         field: createWallet
-        request: "createWallet-request.txt"
-        response: "_generic-result-response.txt"
+        request: "_generic-request.txt"
+        response: "_generic-response.txt"
+      - dataSource: doAuthorization
+        type: Mutation
+        field: doAuthorization
+        request: "_generic-request.txt"
+        response: "_generic-response.txt"
+      - dataSource: doReAuthorization
+        type: Mutation
+        field: doReAuthorization
+        request: "_generic-request.txt"
+        response: "_generic-response.txt"
+      - dataSource: doCapture
+        type: Mutation
+        field: doCapture
+        request: "_generic-request.txt"
+        response: "_generic-response.txt"
+      - dataSource: doReset
+        type: Mutation
+        field: doReset
+        request: "_generic-request.txt"
+        response: "_generic-response.txt"
+      - dataSource: doRefund
+        type: Mutation
+        field: doRefund
+        request: "_generic-request.txt"
+        response: "_generic-response.txt"
+      - dataSource: doPayment
+        type: Mutation
+        field: doPayment
+        request: "_generic-request.txt"
+        response: "_generic-response.txt"
     # schema: # defaults schema.graphql
     serviceRole: "paylineServiceRole"
     dataSources:
+      - type: AWS_LAMBDA
+        name: getWallet
+        description: 'getWallet DataSource'
+        config:
+          lambdaFunctionArn: "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-getWallet"
+          serviceRoleArn: "arn:aws:iam::${self:custom.accountId}:role/${self:custom.appSync.serviceRole}"
+      - type: AWS_LAMBDA
+        name: transactionDetail
+        description: 'transactionDetail DataSource'
+        config:
+          lambdaFunctionArn: "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-transactionDetail"
+          serviceRoleArn: "arn:aws:iam::${self:custom.accountId}:role/${self:custom.appSync.serviceRole}"
       - type: AWS_LAMBDA
         name: createWallet
         description: 'createWallet DataSource'
         config:
           lambdaFunctionArn: "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-createWallet"
+          serviceRoleArn: "arn:aws:iam::${self:custom.accountId}:role/${self:custom.appSync.serviceRole}"
+      - type: AWS_LAMBDA
+        name: doAuthorization
+        description: 'doAuthorization DataSource'
+        config:
+          lambdaFunctionArn: "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-doAuthorization"
+          serviceRoleArn: "arn:aws:iam::${self:custom.accountId}:role/${self:custom.appSync.serviceRole}"
+      - type: AWS_LAMBDA
+        name: doReAuthorization
+        description: 'doReAuthorization DataSource'
+        config:
+          lambdaFunctionArn: "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-doReAuthorization"
+          serviceRoleArn: "arn:aws:iam::${self:custom.accountId}:role/${self:custom.appSync.serviceRole}"
+      - type: AWS_LAMBDA
+        name: doCapture
+        description: 'doCapture DataSource'
+        config:
+          lambdaFunctionArn: "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-doCapture"
+          serviceRoleArn: "arn:aws:iam::${self:custom.accountId}:role/${self:custom.appSync.serviceRole}"
+      - type: AWS_LAMBDA
+        name: doReset
+        description: 'doReset DataSource'
+        config:
+          lambdaFunctionArn: "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-doReset"
+          serviceRoleArn: "arn:aws:iam::${self:custom.accountId}:role/${self:custom.appSync.serviceRole}"
+      - type: AWS_LAMBDA
+        name: doRefund
+        description: 'doRefund DataSource'
+        config:
+          lambdaFunctionArn: "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-doRefund"
+          serviceRoleArn: "arn:aws:iam::${self:custom.accountId}:role/${self:custom.appSync.serviceRole}"
+      - type: AWS_LAMBDA
+        name: doPayment
+        description: 'doPayment DataSource'
+        config:
+          lambdaFunctionArn: "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-doPayment"
           serviceRoleArn: "arn:aws:iam::${self:custom.accountId}:role/${self:custom.appSync.serviceRole}"
 
 provider:
@@ -78,6 +166,8 @@ functions:
     handler: handler.doReAuthorization
   doWalletPayment:
     handler: handler.doWalletPayment
+  doPayment:
+    handler: handler.doPayment
   transactionDetail:
     handler: handler.transactionDetail
   runAction:

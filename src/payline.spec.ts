@@ -100,6 +100,14 @@ describe("PAYMENT operations", () => {
         expect(raw.id).not.toBeUndefined();
     });
 
+    it("do payment", async () => {
+        const raw = await payline.doPayment(payment, card, "test_payment_name_");
+        debug(`Do payment response ${JSON.stringify(raw.raw)}`);
+        //expect(raw.success).toBe(true);
+        expect(raw.raw.result && raw.raw.result.code).toBe("00000");
+        expect(raw.id).not.toBeUndefined();
+    });
+
     it("do reset payment", async () => {
         const {wallet, ...rest} = await payline.createWallet(walletId, card);
         const {id, ...rest2} = await payline.doWalletPayment(wallet, payment, "test_payment_name_");
@@ -137,7 +145,7 @@ describe("AUTHORIZATION operations", () => {
 
     it("do re authorization", async () => {
         const {id, ...rest} = await payline.doAuthorization(payment, card, "test_authorization_name_");
-        const raw = await payline.doReAuthorization(id, payment, card, "test_re-authorization_name_");
+        const raw = await payline.doReAuthorization(id, payment, "test_re-authorization_name_");
 
         debug(`Do re authorization response ${JSON.stringify(raw.raw)}`);
         //expect(raw.success).toBe(true);
@@ -147,7 +155,7 @@ describe("AUTHORIZATION operations", () => {
 
     it("do capture", async () => {
         const {id, ...rest} = await payline.doAuthorization(payment, card, "test_authorization_name_");
-        await payline.doReAuthorization(id, payment, card, "test_re-authorization_name_");
+        await payline.doReAuthorization(id, payment, "test_re-authorization_name_");
         const raw = await payline.doCapture(id, payment);
 
         debug(`Do capture response ${JSON.stringify(raw.raw)}`);
@@ -158,7 +166,7 @@ describe("AUTHORIZATION operations", () => {
 
     it("do reset", async () => {
         const {id, ...rest} = await payline.doAuthorization(payment, card, "test_authorization_name_");
-        await payline.doReAuthorization(id, payment, card, "test_re-authorization_name_");
+        await payline.doReAuthorization(id, payment, "test_re-authorization_name_");
         const raw = await payline.doReset(id);
 
         debug(`Do reset response ${JSON.stringify(raw.raw)}`);

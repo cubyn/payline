@@ -132,7 +132,7 @@ export default class Payline extends PaylineCore {
         }));
     }
 
-    public async doReAuthorization(transactionID: string, payment: Payment, card: Card, referencePrefix?: string,
+    public async doReAuthorization(transactionID: string, payment: Payment, referencePrefix?: string,
                                    currency?: CURRENCIES, order: Order = {}): Promise<TransactionResult> {
         this.setPaymentDefaults(payment, ACTIONS.AUTHORIZATION, currency);
         this.setOrderDefaults(order, referencePrefix, currency, payment.amount);
@@ -181,6 +181,13 @@ export default class Payline extends PaylineCore {
 
         const reset = await this.doReset(authorization && authorization.id);
         return {success: true, raw: {authorization, reset}}
+    }
+
+    public async doPayment(payment: Payment, card: Card, referencePrefix?: string,
+                           currency?: CURRENCIES, order: Order = {}): Promise<TransactionResult> {
+        const authorization = await this.doAuthorization(payment, card, referencePrefix, currency, order);
+        const capture = await this.doCapture(authorization.id, payment, currency);
+        return {id: capture.id, raw: {authorization, capture}}
     }
 
     public async doWebPayment(payment: Payment, returnURL, cancelURL, buyer: any = {}, selectedContractList: any = null,

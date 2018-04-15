@@ -2,12 +2,19 @@ type Query {
     # Get information for the wallet
     getWallet(merchantId: String!, accessKey: String!, contractId: String!, environment: String!,
         walletId: String!): WalletOutput!
+    transactionDetail(transactionId: String!): TransactionDetailOutput!
 }
 
 type Mutation {
     # Create new wallet - needs to generate id first.
     createWallet(merchantId: String!, accessKey: String!, contractId: String!, environment: String!,
         walletId: String!, card: CardInput!): WalletOutput!
+    doAuthorization(payment: PaymentInput!, card: CardInput!, referencePrefix: String): TransactionOutput!
+    doReAuthorization(transactionId: String!, payment: PaymentInput!, referencePrefix: String): TransactionOutput!
+    doCapture(transactionId: String!, payment: PaymentInput!): TransactionOutput!
+    doReset(transactionId: String!, comment: String): TransactionOutput!
+    doRefund(transactionId: String!, payment: PaymentInput!, comment: String): TransactionOutput!
+    doPayment(transactionId: String!, payment: PaymentInput!, comment: String): TransactionOutput!
 }
 
 input CardInput {
@@ -16,6 +23,19 @@ input CardInput {
     cardholder: String!
     expirationDate: String!
     type: String!
+}
+
+input PaymentInput {
+    amount: Int!
+    softDescriptor: String
+}
+
+type TransactionOutput {
+    id: String!
+}
+
+type TransactionDetailOutput {
+    id: String!
 }
 
 type WalletOutput {
