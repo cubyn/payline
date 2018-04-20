@@ -7,8 +7,7 @@ import {CURRENCIES, Environment} from "./src/model";
 const merchantId: string = process.env.MERCHANT_ID || "XXX";
 const accessKey: string = process.env.ACCESS_KEY ||"XXX";
 const contractId: string = process.env.CONTRACT_ID || "1234567";
-const environment: Environment = (process.env.ENVIRONMENT || "") === Environment.production ?
-    Environment.production : Environment.homologation;
+const environment: Environment = (process.env.ENVIRONMENT || "") === Environment.production ? Environment.production : Environment.homologation;
 const currency: CURRENCIES = CURRENCIES[process.env.CURRENCY || ""] || CURRENCIES.USD;
 
 // instances
@@ -76,6 +75,14 @@ export const doAuthorization = async (event, context, callback) => {
 };
 
 export const doReAuthorization = async (event, context, callback) => {
+    // Get params from SNS payload
+    let snsPayload = JSON.parse(event.Records[0].Sns.Message);
+    // Execute function
+    result(callback, await payline(snsPayload).doReAuthorization(snsPayload.transactionID, snsPayload.payment,
+        snsPayload.referencePrefix, snsPayload.currency, snsPayload.order));
+};
+
+export const doReAuthorizationManual = async (event, context, callback) => {
     result(callback, await payline(event).doReAuthorization(event.transactionID, event.payment,
         event.referencePrefix, event.currency, event.order));
 };
