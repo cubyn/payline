@@ -1,0 +1,217 @@
+service: payline
+
+plugins:
+  - serverless-offline
+  - serverless-plugin-typescript
+  - serverless-appsync-plugin
+
+custom:
+  envStage: ${env:BRANCH, 'master'}
+  stage: ${opt:stage, self:custom.envStage}
+  envConfiguration: ${env:CONFIGURATION, self:custom.stage}
+  configuration: ${opt:configuration, self:custom.envConfiguration}
+  accountId: ${opt:accountId, env:AWS_ACCOUNT_ID} # replace this with your accountId
+  appSync:
+    name: payline-${self:custom.stage}
+    apiId: ${opt:appsyncId, env:AWS_APPSYNC_ID} # only required for update-appsync
+    authenticationType: AWS_IAM # AWS_IAM, AMAZON_COGNITO_USER_POOLS, API_KEY is supported
+    mappingTemplates:
+      - dataSource: getWallet
+        type: Query
+        field: getWallet
+        request: "_generic-request.txt"
+        response: "_generic-response.txt"
+      - dataSource: transactionDetail
+        type: Query
+        field: transactionDetail
+        request: "_generic-request.txt"
+        response: "_generic-response.txt"
+      - dataSource: createWallet
+        type: Mutation
+        field: createWallet
+        request: "_generic-request.txt"
+        response: "_generic-response.txt"
+      - dataSource: doAuthorization
+        type: Mutation
+        field: doAuthorization
+        request: "_generic-request.txt"
+        response: "_generic-response.txt"
+      - dataSource: doReAuthorization
+        type: Mutation
+        field: doReAuthorization
+        request: "_generic-request.txt"
+        response: "_generic-response.txt"
+      - dataSource: doCapture
+        type: Mutation
+        field: doCapture
+        request: "_generic-request.txt"
+        response: "_generic-response.txt"
+      - dataSource: doReset
+        type: Mutation
+        field: doReset
+        request: "_generic-request.txt"
+        response: "_generic-response.txt"
+      - dataSource: doRefund
+        type: Mutation
+        field: doRefund
+        request: "_generic-request.txt"
+        response: "_generic-response.txt"
+      - dataSource: doPayment
+        type: Mutation
+        field: doPayment
+        request: "_generic-request.txt"
+        response: "_generic-response.txt"
+    # schema: # defaults schema.graphql
+    serviceRole: "paylineServiceRole-${self:custom.stage}"
+    dataSources:
+      - type: AWS_LAMBDA
+        name: getWallet
+        description: 'getWallet DataSource'
+        config:
+          lambdaFunctionArn: "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-getWallet"
+          serviceRoleArn: "arn:aws:iam::${self:custom.accountId}:role/${self:custom.appSync.serviceRole}"
+      - type: AWS_LAMBDA
+        name: transactionDetail
+        description: 'transactionDetail DataSource'
+        config:
+          lambdaFunctionArn: "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-transactionDetail"
+          serviceRoleArn: "arn:aws:iam::${self:custom.accountId}:role/${self:custom.appSync.serviceRole}"
+      - type: AWS_LAMBDA
+        name: createWallet
+        description: 'createWallet DataSource'
+        config:
+          lambdaFunctionArn: "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-createWallet"
+          serviceRoleArn: "arn:aws:iam::${self:custom.accountId}:role/${self:custom.appSync.serviceRole}"
+      - type: AWS_LAMBDA
+        name: doAuthorization
+        description: 'doAuthorization DataSource'
+        config:
+          lambdaFunctionArn: "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-doAuthorization"
+          serviceRoleArn: "arn:aws:iam::${self:custom.accountId}:role/${self:custom.appSync.serviceRole}"
+      - type: AWS_LAMBDA
+        name: doReAuthorization
+        description: 'doReAuthorization DataSource'
+        config:
+          lambdaFunctionArn: "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-doReAuthorization"
+          serviceRoleArn: "arn:aws:iam::${self:custom.accountId}:role/${self:custom.appSync.serviceRole}"
+      - type: AWS_LAMBDA
+        name: doCapture
+        description: 'doCapture DataSource'
+        config:
+          lambdaFunctionArn: "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-doCapture"
+          serviceRoleArn: "arn:aws:iam::${self:custom.accountId}:role/${self:custom.appSync.serviceRole}"
+      - type: AWS_LAMBDA
+        name: doReset
+        description: 'doReset DataSource'
+        config:
+          lambdaFunctionArn: "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-doReset"
+          serviceRoleArn: "arn:aws:iam::${self:custom.accountId}:role/${self:custom.appSync.serviceRole}"
+      - type: AWS_LAMBDA
+        name: doRefund
+        description: 'doRefund DataSource'
+        config:
+          lambdaFunctionArn: "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-doRefund"
+          serviceRoleArn: "arn:aws:iam::${self:custom.accountId}:role/${self:custom.appSync.serviceRole}"
+      - type: AWS_LAMBDA
+        name: doPayment
+        description: 'doPayment DataSource'
+        config:
+          lambdaFunctionArn: "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-doPayment"
+          serviceRoleArn: "arn:aws:iam::${self:custom.accountId}:role/${self:custom.appSync.serviceRole}"
+
+provider:
+  name: 'aws'
+  runtime: 'nodejs8.10'
+  stage: ${self:custom.stage} # Set the default stage used. Default is dev
+  region: ${opt:region, 'eu-west-1'} # Overwrite the default region used. Default is us-east-1
+  memorySize: 128 # Overwrite the default memory size. Default is 1024
+  timeout: 10 # The default is 6 seconds. Note: API Gateway current maximum is 30 seconds
+  logRetentionInDays: 30 # Set the default RetentionInDays for a CloudWatch LogGroup
+  versionFunctions: true # Optional function versioning
+  environment: ${file(./environment/${self:custom.configuration}.yml)} # default env variables from the files per stage
+
+package: # Optional deployment packaging configuration
+  include: # Specify the directories and files which should be included in the deployment package
+    - src/**
+    - handler.ts
+  exclude: # Specify the directories and files which should be excluded in the deployment package
+    - .git/**
+    - .idea/**
+  excludeDevDependencies: true # Config if Serverless should automatically exclude dev dependencies in the deployment package. Defaults to true
+
+functions:
+  createWallet:
+    handler: handler.createWallet
+  getWallet:
+    handler: handler.getWallet
+  updateWallet:
+    handler: handler.updateWallet
+  disableWallet:
+    handler: handler.disableWallet
+  doWebPayment:
+    handler: handler.doWebPayment
+  doCapture:
+    handler: handler.doCapture
+  doRefund:
+    handler: handler.doRefund
+  scheduleWalletPayment:
+    handler: handler.scheduleWalletPayment
+  validateCard:
+    handler: handler.validateCard
+  doReset:
+    handler: handler.doReset
+  doAuthorization:
+    handler: handler.doAuthorization
+  doReAuthorization:
+    handler: handler.doReAuthorization
+  doWalletPayment:
+    handler: handler.doWalletPayment
+  doPayment:
+    handler: handler.doPayment
+  transactionDetail:
+    handler: handler.transactionDetail
+  runAction:
+    handler: handler.runAction
+
+resources:
+  Resources:
+    paylineServiceRole:
+      Type: "AWS::IAM::Role"
+      Properties:
+        RoleName: "paylineServiceRole-${self:custom.stage}"
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: "Allow"
+              Principal:
+                Service:
+                  - "appsync.amazonaws.com"
+              Action:
+                - "sts:AssumeRole"
+        Policies:
+          - PolicyName: "paylinePolicy"
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: "Allow"
+                  Action:
+                    - "lambda:invokeFunction"
+                  Resource:
+                    - "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-getWallet"
+                    - "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-getWallet:*"
+                    - "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-transactionDetail"
+                    - "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-transactionDetail:*"
+                    - "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-createWallet"
+                    - "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-createWallet:*"
+                    - "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-doAuthorization"
+                    - "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-doAuthorization:*"
+                    - "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-doReAuthorization"
+                    - "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-doReAuthorization:*"
+                    - "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-doCapture"
+                    - "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-doCapture:*"
+                    - "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-doReset"
+                    - "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-doReset:*"
+                    - "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-doRefund"
+                    - "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-doRefund:*"
+                    - "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-doPayment"
+                    - "arn:aws:lambda:${opt:region, 'eu-west-1'}:${self:custom.accountId}:function:payline-${self:custom.stage}-doPayment:*"

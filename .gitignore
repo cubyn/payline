@@ -2,3 +2,9 @@ test.js
 dist/
 node_modules/
 npm-debug.log
+#InteliJ files
+/.idea
+*.iml
+/.build
+/.serverless
+package-lock.json
