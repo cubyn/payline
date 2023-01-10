@@ -22,7 +22,7 @@
   "license": "MIT",
   "dependencies": {
     "bluebird": "2.10.x",
-    "debug": "2.2.x",
+    "debug": "3.1.x",
     "soap": "^0.9.x"
   },
   "devDependencies": {
